@@ -99,7 +99,7 @@ Base.argmax(x::OneHotLike; dims = Colon()) =
     invoke(argmax, Tuple{AbstractArray}, x; dims = dims)
 
 """
-onehot(x, labels, [default])
+    onehot(x, labels, [default])
 
 Return a `OneHotVector` which is roughly a sparse representation of `x .== labels`.
 
