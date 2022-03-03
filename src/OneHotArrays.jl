@@ -1,9 +1,11 @@
 module OneHotArrays
 
 using Adapt
+using CUDA
 using LinearAlgebra
 using MLUtils 
 using NNlib
+using Zygote: @nograd
 
 export onehot, onehotbatch, onecold, OneHotArray, 
   OneHotVector, OneHotMatrix, OneHotLike
@@ -21,6 +23,8 @@ OneHotArray{T, L, N, I}(indices) where {T, L, N, I} = OneHotArray{T, L, N, N+1, 
 OneHotArray(indices::T, L::Integer) where {T<:Integer} = OneHotArray{T, L, 0, 1, T}(indices)
 OneHotArray(indices::I, L::Integer) where {T, N, I<:AbstractArray{T, N}} = OneHotArray{T, L, N, N+1, I}(indices)
 
+_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
+_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:CuArray}) where N = CuArray{Bool, N}
 
 _indices(x::OneHotArray) = x.indices
 _indices(x::Base.ReshapedArray{<: Any, <: Any, <: OneHotArray}) =
@@ -227,6 +231,8 @@ function _fast_argmax(x::OneHotLike)
     return _fast_argmax(convert(_onehot_bool_type(x), x))
   end
 end
+
+@nograd OneHotArray, onecold, onehot, onehotbatch
 
 function Base.:(*)(A::AbstractMatrix, B::OneHotLike{<:Any, L}) where L
   _isonehot(B) || return invoke(*, Tuple{AbstractMatrix, AbstractMatrix}, A, B)
