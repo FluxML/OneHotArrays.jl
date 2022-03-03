@@ -45,12 +45,12 @@ _isonehot(x::Base.ReshapedArray{<:Any, <:Any, <:OneHotArray{<:Any, L}}) where L 
 
 Base.size(x::OneHotArray{<:Any, L}) where L = (Int(L), size(x.indices)...)
 
-_onehotindex(x, i) = (x == i)
+function Base.getindex(x::OneHotArray, i::Integer, I...)
+  @boundscheck checkbounds(x, i, I...)
+  return x.indices[I...] .== i
+end
 
-Base.getindex(x::OneHotVector, i::Integer) = _onehotindex(x.indices, i)
 Base.getindex(x::OneHotVector{T, L}, ::Colon) where {T, L} = x
-
-Base.getindex(x::OneHotArray, i::Integer, I...) = _onehotindex.(x.indices[I...], i)
 Base.getindex(x::OneHotArray{<:Any, L}, ::Colon, I...) where L = OneHotArray(x.indices[I...], L)
 Base.getindex(x::OneHotArray{<:Any, <:Any, <:Any, N}, ::Vararg{Colon, N}) where N = x
 Base.getindex(x::OneHotArray, I::CartesianIndex{N}) where N = x[I[1], Tuple(I)[2:N]...]

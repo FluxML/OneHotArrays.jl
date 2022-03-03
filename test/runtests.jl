@@ -135,6 +135,11 @@ end
 
     # cartesian indexing
     @test oa[CartesianIndex(3, 3, 3)] == oa[3, 3, 3]
+
+    # bounds checking
+    @test_throws BoundsError ov[0]
+    @test_throws BoundsError ov[11]
+    @test_throws BoundsError om[10, 6]
   end
 
   @testset "Concatenating" begin
