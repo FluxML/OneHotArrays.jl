@@ -10,25 +10,22 @@ using Zygote: @nograd
 export onehot, onehotbatch, onecold, OneHotArray, 
   OneHotVector, OneHotMatrix, OneHotLike
 
-"""
-    OneHotArray{T,L,N,M,I} <: AbstractArray{Bool,M}
+  """
+  OneHotArray{T,L,N,M,I} <: AbstractArray{Bool,M}
 
 These are constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
 Parameter `I` is the type of the underlying storage, and `T` its eltype.
 """
 struct OneHotArray{T<:Integer, L, N, var"N+1", I<:Union{T, AbstractArray{T, N}}} <: AbstractArray{Bool, var"N+1"}
-  indices::I
+indices::I
 end
 OneHotArray{T, L, N, I}(indices) where {T, L, N, I} = OneHotArray{T, L, N, N+1, I}(indices)
 OneHotArray(indices::T, L::Integer) where {T<:Integer} = OneHotArray{T, L, 0, 1, T}(indices)
 OneHotArray(indices::I, L::Integer) where {T, N, I<:AbstractArray{T, N}} = OneHotArray{T, L, N, N+1, I}(indices)
 
-_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
-_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:CuArray}) where N = CuArray{Bool, N}
-
 _indices(x::OneHotArray) = x.indices
 _indices(x::Base.ReshapedArray{<: Any, <: Any, <: OneHotArray}) =
-  reshape(parent(x).indices, x.dims[2:end])
+reshape(parent(x).indices, x.dims[2:end])
 
 const OneHotVector{T, L} = OneHotArray{T, L, 0, 1, T}
 const OneHotMatrix{T, L, I} = OneHotArray{T, L, 1, 2, I}
@@ -41,8 +38,8 @@ OneHotMatrix(indices, L) = OneHotArray(indices, L)
 # use this type so reshaped arrays hit fast paths
 # e.g. argmax
 const OneHotLike{T, L, N, var"N+1", I} =
-  Union{OneHotArray{T, L, N, var"N+1", I},
-        Base.ReshapedArray{Bool, var"N+1", <:OneHotArray{T, L, <:Any, <:Any, I}}}
+Union{OneHotArray{T, L, N, var"N+1", I},
+      Base.ReshapedArray{Bool, var"N+1", <:OneHotArray{T, L, <:Any, <:Any, I}}}
 
 _isonehot(x::OneHotArray) = true
 _isonehot(x::Base.ReshapedArray{<:Any, <:Any, <:OneHotArray{<:Any, L}}) where L = (size(x, 1) == L)
@@ -72,7 +69,14 @@ function Base.replace_in_print_matrix(x::OneHotLike, i::Integer, j::Integer, s::
   x[i,j] ? s : _isonehot(x) ? Base.replace_with_centered_mark(s) : s
 end
 
-_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
+# copy CuArray versions back before trying to print them:
+Base.print_array(io::IO, X::OneHotLike{T, L, N, var"N+1", <:CuArray}) where {T, L, N, var"N+1"} = 
+Base.print_array(io, cpu(X))
+Base.print_array(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, L, N, var"N+1", <:CuArray}}) where {T, L, N, var"N+1"} = 
+Base.print_array(io, cpu(X))
+
+_onehot_bool_type(x::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
+_onehot_bool_type(x::OneHotLike{<:Any, <:Any, <:Any, N, <:CuArray}) where N = CuArray{Bool, N}
 
 function Base.cat(x::OneHotLike{<:Any, L}, xs::OneHotLike{<:Any, L}...; dims::Int) where L
   if isone(dims) || any(x -> !_isonehot(x), (x, xs...))
@@ -87,23 +91,25 @@ Base.vcat(x::OneHotLike, xs::OneHotLike...) = cat(x, xs...; dims = 1)
 
 # optimized concatenation for matrices and vectors of same parameters
 Base.hcat(x::T, xs::T...) where {L, T <: OneHotLike{<:Any, L, <:Any, 2}} =
-  OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), L)
+OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), L)
 Base.hcat(x::T, xs::T...) where {L, T <: OneHotLike{<:Any, L, <:Any, 1}} =
-  OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), L)
+OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), L)
 
 MLUtils.batch(xs::AbstractArray{<:OneHotVector{<:Any, L}}) where L = OneHotMatrix(_indices.(xs), L)
 
 Adapt.adapt_structure(T, x::OneHotArray{<:Any, L}) where L = OneHotArray(adapt(T, _indices(x)), L)
 
+Base.BroadcastStyle(::Type{<:OneHotArray{<: Any, <: Any, <: Any, N, <: CuArray}}) where N = CUDA.CuArrayStyle{N}()
+
 Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
 
 Base.argmax(x::OneHotLike; dims = Colon()) =
-  (_isonehot(x) && dims == 1) ?
-    reshape(CartesianIndex.(_indices(x), CartesianIndices(_indices(x))), 1, size(_indices(x))...) :
-    invoke(argmax, Tuple{AbstractArray}, x; dims = dims)
+(_isonehot(x) && dims == 1) ?
+  reshape(CartesianIndex.(_indices(x), CartesianIndices(_indices(x))), 1, size(_indices(x))...) :
+  invoke(argmax, Tuple{AbstractArray}, x; dims = dims)
 
 """
-    onehot(x, labels, [default])
+  onehot(x, labels, [default])
 
 Return a `OneHotVector` which is roughly a sparse representation of `x .== labels`.
 
@@ -118,18 +124,18 @@ and [`onecold`](@ref) to reverse either of these, as well as to generalise `argm
 ```jldoctest
 julia> β = Flux.onehot(:b, (:a, :b, :c))
 3-element OneHotVector(::UInt32) with eltype Bool:
- ⋅
- 1
- ⋅
+⋅
+1
+⋅
 
 julia> αβγ = (Flux.onehot(0, 0:2), β, Flux.onehot(:z, [:a, :b, :c], :c))  # uses default
 (Bool[1, 0, 0], Bool[0, 1, 0], Bool[0, 0, 1])
 
 julia> hcat(αβγ...)  # preserves sparsity
 3×3 OneHotMatrix(::Vector{UInt32}) with eltype Bool:
- 1  ⋅  ⋅
- ⋅  1  ⋅
- ⋅  ⋅  1
+1  ⋅  ⋅
+⋅  1  ⋅
+⋅  ⋅  1
 ```
 """
 function onehot(x, labels)
@@ -152,7 +158,7 @@ end
 _findval(val, labels::Tuple{}, i::Integer) = nothing
 
 """
-    onehotbatch(xs, labels, [default])
+  onehotbatch(xs, labels, [default])
 
 Returns a `OneHotMatrix` where `k`th column of the matrix is [`onehot(xs[k], labels)`](@ref onehot).
 This is a sparse matrix, which stores just a `Vector{UInt32}` containing the indices of the
@@ -172,17 +178,17 @@ for `labels` will often speed up construction, certainly for less than 32 classe
 ```jldoctest
 julia> oh = Flux.onehotbatch("abracadabra", 'a':'e', 'e')
 5×11 OneHotMatrix(::Vector{UInt32}) with eltype Bool:
- 1  ⋅  ⋅  1  ⋅  1  ⋅  1  ⋅  ⋅  1
- ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅
- ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅
- ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅
- ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅
+1  ⋅  ⋅  1  ⋅  1  ⋅  1  ⋅  ⋅  1
+⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅
+⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅
+⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅
+⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅
 
 julia> reshape(1:15, 3, 5) * oh  # this matrix multiplication is done efficiently
 3×11 Matrix{Int64}:
- 1  4  13  1  7  1  10  1  4  13  1
- 2  5  14  2  8  2  11  2  5  14  2
- 3  6  15  3  9  3  12  3  6  15  3
+1  4  13  1  7  1  10  1  4  13  1
+2  5  14  2  8  2  11  2  5  14  2
+3  6  15  3  9  3  12  3  6  15  3
 ```
 """
 onehotbatch(ls, labels, default...) = _onehotbatch(ls, length(labels) < 32 ? Tuple(labels) : labels, default...)
@@ -190,7 +196,7 @@ onehotbatch(ls, labels, default...) = _onehotbatch(ls, length(labels) < 32 ? Tup
 _onehotbatch(ls, labels, default...) = batch([onehot(l, labels, default...) for l in ls])
 
 """
-    onecold(y::AbstractArray, labels = 1:size(y,1))
+  onecold(y::AbstractArray, labels = 1:size(y,1))
 
 Roughly the inverse operation of [`onehot`](@ref) or [`onehotbatch`](@ref): 
 This finds the index of the largest element of `y`, or each column of `y`, 
@@ -208,10 +214,10 @@ julia> Flux.onecold([0.3, 0.2, 0.5], (:a, :b, :c))
 :c
 
 julia> Flux.onecold([ 1  0  0  1  0  1  0  1  0  0  1
-                      0  1  0  0  0  0  0  0  1  0  0
-                      0  0  0  0  1  0  0  0  0  0  0
-                      0  0  0  0  0  0  1  0  0  0  0
-                      0  0  1  0  0  0  0  0  0  1  0 ], 'a':'e') |> String
+                    0  1  0  0  0  0  0  0  1  0  0
+                    0  0  0  0  1  0  0  0  0  0  0
+                    0  0  0  0  0  0  1  0  0  0  0
+                    0  0  1  0  0  0  0  0  0  1  0 ], 'a':'e') |> String
 "abeacadabea"
 ```
 """
