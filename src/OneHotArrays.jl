@@ -1,6 +1,8 @@
 module OneHotArrays
 
 using Adapt
+using ChainRulesCore
+using CUDA
 using LinearAlgebra
 using MLUtils 
 using NNlib
@@ -20,7 +22,6 @@ end
 OneHotArray{T, L, N, I}(indices) where {T, L, N, I} = OneHotArray{T, L, N, N+1, I}(indices)
 OneHotArray(indices::T, L::Integer) where {T<:Integer} = OneHotArray{T, L, 0, 1, T}(indices)
 OneHotArray(indices::I, L::Integer) where {T, N, I<:AbstractArray{T, N}} = OneHotArray{T, L, N, N+1, I}(indices)
-
 
 _indices(x::OneHotArray) = x.indices
 _indices(x::Base.ReshapedArray{<: Any, <: Any, <: OneHotArray}) =
@@ -68,7 +69,14 @@ function Base.replace_in_print_matrix(x::OneHotLike, i::Integer, j::Integer, s::
   x[i,j] ? s : _isonehot(x) ? Base.replace_with_centered_mark(s) : s
 end
 
+# copy CuArray versions back before trying to print them:
+Base.print_array(io::IO, X::OneHotLike{T, L, N, var"N+1", <:CuArray}) where {T, L, N, var"N+1"} = 
+  Base.print_array(io, adapt(Array, X))
+Base.print_array(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, L, N, var"N+1", <:CuArray}}) where {T, L, N, var"N+1"} = 
+  Base.print_array(io, adapt(Array, X))
+
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
+_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:CuArray}) where N = CuArray{Bool, N}
 
 function Base.cat(x::OneHotLike{<:Any, L}, xs::OneHotLike{<:Any, L}...; dims::Int) where L
   if isone(dims) || any(x -> !_isonehot(x), (x, xs...))
@@ -90,6 +98,8 @@ Base.hcat(x::T, xs::T...) where {L, T <: OneHotLike{<:Any, L, <:Any, 1}} =
 MLUtils.batch(xs::AbstractArray{<:OneHotVector{<:Any, L}}) where L = OneHotMatrix(_indices.(xs), L)
 
 Adapt.adapt_structure(T, x::OneHotArray{<:Any, L}) where L = OneHotArray(adapt(T, _indices(x)), L)
+
+Base.BroadcastStyle(::Type{<:OneHotArray{<: Any, <: Any, <: Any, N, <: CuArray}}) where N = CUDA.CuArrayStyle{N}()
 
 Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
 
@@ -227,6 +237,12 @@ function _fast_argmax(x::OneHotLike)
     return _fast_argmax(convert(_onehot_bool_type(x), x))
   end
 end
+
+ChainRulesCore.@non_differentiable onehot(::Any...)
+ChainRulesCore.@non_differentiable onehotbatch(::Any...)
+ChainRulesCore.@non_differentiable onecold(::Any...)
+
+ChainRulesCore.@non_differentiable (::Type{<:OneHotArray})(indices::Any, L::Integer)
 
 function Base.:(*)(A::AbstractMatrix, B::OneHotLike{<:Any, L}) where L
   _isonehot(B) || return invoke(*, Tuple{AbstractMatrix, AbstractMatrix}, A, B)
