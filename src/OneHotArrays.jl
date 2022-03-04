@@ -71,9 +71,9 @@ end
 
 # copy CuArray versions back before trying to print them:
 Base.print_array(io::IO, X::OneHotLike{T, L, N, var"N+1", <:CuArray}) where {T, L, N, var"N+1"} = 
-  Base.print_array(io, cpu(X))
+  Base.print_array(io, adapt(Array, X))
 Base.print_array(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, L, N, var"N+1", <:CuArray}}) where {T, L, N, var"N+1"} = 
-  Base.print_array(io, cpu(X))
+  Base.print_array(io, adapt(Array, X))
 
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:CuArray}) where N = CuArray{Bool, N}
