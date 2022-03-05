@@ -1,7 +1,3 @@
-using Random
-
-Random.seed!(0)
-
 ov = OneHotVector(rand(1:10), 10)
 ov2 = OneHotVector(rand(1:11), 11)
 om = OneHotMatrix(rand(1:10, 5), 10)
@@ -40,8 +36,6 @@ end
   @test oa[CartesianIndex(3, 3, 3)] == oa[3, 3, 3]
 
   # linear indexing
-  @test om[9] == true
-  @test om[10] == false
   @test om[11] == om[1, 2]
   @test oa[52] == oa[2, 1, 2]
 
