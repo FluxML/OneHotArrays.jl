@@ -34,15 +34,18 @@ _isonehot(x::Base.ReshapedArray{<:Any, <:Any, <:OneHotArray{<:Any, L}}) where L 
 
 Base.size(x::OneHotArray{<:Any, L}) where L = (Int(L), size(x.indices)...)
 
-_onehotindex(x, i) = (x == i)
+function Base.getindex(x::OneHotArray{<:Any, <:Any, N}, i::Integer, I::Vararg{Any, N}) where N
+  @boundscheck checkbounds(x, i, I...)
+  return x.indices[I...] .== i
+end
 
-Base.getindex(x::OneHotVector, i::Integer) = _onehotindex(x.indices, i)
-Base.getindex(x::OneHotVector{T, L}, ::Colon) where {T, L} = x
+function Base.getindex(x::OneHotArray{<:Any, L}, ::Colon, I...) where L
+  @boundscheck checkbounds(x, :, I...)
+  return OneHotArray(x.indices[I...], L)
+end
 
-Base.getindex(x::OneHotArray, i::Integer, I...) = _onehotindex.(x.indices[I...], i)
-Base.getindex(x::OneHotArray{<:Any, L}, ::Colon, I...) where L = OneHotArray(x.indices[I...], L)
-Base.getindex(x::OneHotArray{<:Any, <:Any, <:Any, N}, ::Vararg{Colon, N}) where N = x
-Base.getindex(x::OneHotArray, I::CartesianIndex{N}) where N = x[I[1], Tuple(I)[2:N]...]
+Base.getindex(x::OneHotArray, ::Colon) = BitVector(reshape(x, :))
+Base.getindex(x::OneHotArray{<:Any, <:Any, N}, ::Colon, ::Vararg{Colon, N}) where N = x
 
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
   print(io, ndims(x) == 1 ? "OneHotVector(" : ndims(x) == 2 ? "OneHotMatrix(" : "OneHotArray(")
