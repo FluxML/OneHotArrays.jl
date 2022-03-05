@@ -21,6 +21,7 @@ end
   @test om[:, 3] == OneHotVector(om.indices[3], 10)
   @test om[3, :] == (om.indices .== 3)
   @test om[:, :] == om
+  @test om[:] == reshape(om, :)
 
   # array indexing
   @test oa[3, 3, 3] == (oa.indices[3, 3] == 3)
@@ -29,9 +30,20 @@ end
   @test oa[3, :, :] == (oa.indices .== 3)
   @test oa[:, 3, :] == OneHotMatrix(oa.indices[3, :], 10)
   @test oa[:, :, :] == oa
+  @test oa[:] == reshape(oa, :)
 
   # cartesian indexing
   @test oa[CartesianIndex(3, 3, 3)] == oa[3, 3, 3]
+
+  # linear indexing
+  @test om[11] == om[1, 2]
+  @test oa[52] == oa[2, 1, 2]
+
+  # bounds checks
+  @test_throws BoundsError ov[0]
+  @test_throws BoundsError om[2, -1]
+  @test_throws BoundsError oa[11, 5, 5]
+  @test_throws BoundsError oa[:, :]
 end
 
 @testset "Concatenating" begin

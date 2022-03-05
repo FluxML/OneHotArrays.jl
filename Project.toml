@@ -12,8 +12,8 @@ NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 
 [compat]
 Adapt = "3.0"
-ChainRulesCore = "1.13"
 CUDA = "3.8"
+ChainRulesCore = "1.13"
 MLUtils = "0.2"
 NNlib = "0.8"
 
