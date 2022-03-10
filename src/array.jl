@@ -61,10 +61,14 @@ function Base.replace_in_print_matrix(x::OneHotLike, i::Integer, j::Integer, s::
 end
 
 # copy CuArray versions back before trying to print them:
-Base.print_array(io::IO, X::OneHotLike{T, L, N, var"N+1", <:AbstractGPUArray}) where {T, L, N, var"N+1"} = 
-  Base.print_array(io, adapt(Array, X))
-Base.print_array(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, L, N, var"N+1", <:AbstractGPUArray}}) where {T, L, N, var"N+1"} = 
-  Base.print_array(io, adapt(Array, X))
+for fun in (:show, :print_array)  # print_array is used by 3-arg show
+  @eval begin
+    Base.$fun(io::IO, X::OneHotLike{T, L, N, var"N+1", <:AbstractGPUArray}) where {T, L, N, var"N+1"} = 
+      Base.$fun(io, adapt(Array, X))
+    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, L, N, <:Any, <:AbstractGPUArray}}) where {T, L, N} = 
+      Base.$fun(io, adapt(Array, X))
+  end
+end
 
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, var"N+1", <:Union{Integer, AbstractArray}}) where {var"N+1"} = Array{Bool, var"N+1"}
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, var"N+1", <:AbstractGPUArray}) where {var"N+1"} = AbstractGPUArray{Bool, var"N+1"}

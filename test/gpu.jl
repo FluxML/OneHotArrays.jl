@@ -39,3 +39,13 @@ end
   @test all(map(identity, oa) .== oa)
   @test all(map(x -> 2 * x, oa) .== 2 .* oa)
 end
+
+@testset "show gpu" begin
+  x = onehotbatch([1, 2, 3], 1:3)
+  cx = cu(x)
+  # 3-arg show
+  @test contains(repr("text/plain", cx), "1  ⋅  ⋅")
+  @test contains(repr("text/plain", cx), string(typeof(cx.indices)))
+  # 2-arg show, https://github.com/FluxML/Flux.jl/issues/1905
+  @test repr(cx) == "Bool[1 0 0; 0 1 0; 0 0 1]"
+end
