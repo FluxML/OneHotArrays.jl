@@ -66,8 +66,8 @@ Base.print_array(io::IO, X::OneHotLike{T, L, N, var"N+1", <:AbstractGPUArray}) w
 Base.print_array(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, L, N, var"N+1", <:AbstractGPUArray}}) where {T, L, N, var"N+1"} = 
   Base.print_array(io, adapt(Array, X))
 
-_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:Union{Integer, AbstractArray}}) where N = Array{Bool, N}
-_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, N, <:AbstractGPUArray}) where N = AbstractGPUArray{Bool, N}
+_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, var"N+1", <:Union{Integer, AbstractArray}}) where {var"N+1"} = Array{Bool, var"N+1"}
+_onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, var"N+1", <:AbstractGPUArray}) where {var"N+1"} = AbstractGPUArray{Bool, var"N+1"}
 
 function Base.cat(x::OneHotLike{<:Any, L}, xs::OneHotLike{<:Any, L}...; dims::Int) where L
   if isone(dims) || any(x -> !_isonehot(x), (x, xs...))

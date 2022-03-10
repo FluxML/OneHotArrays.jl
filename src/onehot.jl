@@ -57,8 +57,8 @@ nonzero elements.
 If one of the inputs in `xs` is not found in `labels`, that column is `onehot(default, labels)`
 if `default` is given, else an error.
 
-If `xs` has more dimensions, `M = ndims(xs) > 1`, then the result is an 
-`AbstractArray{Bool, M+1}` which is one-hot along the first dimension, 
+If `xs` has more dimensions, `N = ndims(xs) > 1`, then the result is an 
+`AbstractArray{Bool, N+1}` which is one-hot along the first dimension, 
 i.e. `result[:, k...] == onehot(xs[k...], labels)`.
 
 Note that `xs` can be any iterable, such as a string. And that using a tuple
