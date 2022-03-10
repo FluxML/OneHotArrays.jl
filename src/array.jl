@@ -90,7 +90,13 @@ MLUtils.batch(xs::AbstractArray{<:OneHotVector{<:Any, L}}) where L = OneHotMatri
 
 Adapt.adapt_structure(T, x::OneHotArray{<:Any, L}) where L = OneHotArray(adapt(T, _indices(x)), L)
 
-Base.BroadcastStyle(::Type{<:OneHotArray{<: Any, <: Any, <: Any, N, T}}) where {N, T <: AbstractGPUArray} = Base.BroadcastStyle(T)
+function Base.BroadcastStyle(::Type{<:OneHotArray{<: Any, <: Any, <: Any, var"N+1", T}}) where {var"N+1", T <: AbstractGPUArray}
+  # We want CuArrayStyle{N+1}(). There's an AbstractGPUArrayStyle but it doesn't do what we need. 
+  S = Base.BroadcastStyle(T)
+  # S has dim N not N+1. The following hack to fix it relies on the arraystyle having N as its first type parameter, which
+  # isn't guaranteed, but there are not so many GPU broadcasting styles in the wild. (Far fewer than there are array wrappers.)
+  (typeof(S).name.wrapper){var"N+1"}()
+end
 
 Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
 
