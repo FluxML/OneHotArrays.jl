@@ -2,7 +2,7 @@ module OneHotArrays
 
 using Adapt
 using ChainRulesCore
-using CUDA
+using GPUArrays
 using LinearAlgebra
 using MLUtils 
 using NNlib
