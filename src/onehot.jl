@@ -12,13 +12,13 @@ and [`onecold`](@ref) to reverse either of these, as well as to generalise `argm
 
 # Examples
 ```jldoctest
-julia> β = Flux.onehot(:b, (:a, :b, :c))
+julia> β = onehot(:b, (:a, :b, :c))
 3-element OneHotVector(::UInt32) with eltype Bool:
  ⋅
  1
  ⋅
 
-julia> αβγ = (Flux.onehot(0, 0:2), β, Flux.onehot(:z, [:a, :b, :c], :c))  # uses default
+julia> αβγ = (onehot(0, 0:2), β, onehot(:z, [:a, :b, :c], :c))  # uses default
 (Bool[1, 0, 0], Bool[0, 1, 0], Bool[0, 0, 1])
 
 julia> hcat(αβγ...)  # preserves sparsity
@@ -66,7 +66,7 @@ for `labels` will often speed up construction, certainly for less than 32 classe
 
 # Examples
 ```jldoctest
-julia> oh = Flux.onehotbatch("abracadabra", 'a':'e', 'e')
+julia> oh = onehotbatch("abracadabra", 'a':'e', 'e')
 5×11 OneHotMatrix(::Vector{UInt32}) with eltype Bool:
  1  ⋅  ⋅  1  ⋅  1  ⋅  1  ⋅  ⋅  1
  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅
@@ -112,17 +112,17 @@ the same operation as `argmax(y, dims=1)` but sometimes a different return type.
 
 # Examples
 ```jldoctest
-julia> Flux.onecold([false, true, false])
+julia> onecold([false, true, false])
 2
 
-julia> Flux.onecold([0.3, 0.2, 0.5], (:a, :b, :c))
+julia> onecold([0.3, 0.2, 0.5], (:a, :b, :c))
 :c
 
-julia> Flux.onecold([ 1  0  0  1  0  1  0  1  0  0  1
-                      0  1  0  0  0  0  0  0  1  0  0
-                      0  0  0  0  1  0  0  0  0  0  0
-                      0  0  0  0  0  0  1  0  0  0  0
-                      0  0  1  0  0  0  0  0  0  1  0 ], 'a':'e') |> String
+julia> onecold([ 1  0  0  1  0  1  0  1  0  0  1
+                 0  1  0  0  0  0  0  0  1  0  0
+                 0  0  0  0  1  0  0  0  0  0  0
+                 0  0  0  0  0  0  1  0  0  0  0
+                 0  0  1  0  0  0  0  0  0  1  0 ], 'a':'e') |> String
 "abeacadabea"
 ```
 """
