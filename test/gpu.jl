@@ -6,7 +6,7 @@
   cx = cu(x)
   @test cx isa CuArray
 
-  @test_broken onecold(cu([1.0, 2.0, 3.0])) == 3  # scalar indexing error?
+  @test onecold(cu([1.0, 2.0, 3.0])) == 3
 
   x = onehotbatch([1, 2, 3], 1:3)
   cx = cu(x)
