@@ -6,7 +6,7 @@
   cx = cu(x)
   @test cx isa CuArray
 
-  @test_broken onecold(cu([1.0, 2.0, 3.0])) == 3  # scalar indexing error?
+  @test_skip onecold(cu([1.0, 2.0, 3.0])) == 3  # passes with CuArray with Julia 1.6, but fails with JLArray
 
   x = onehotbatch([1, 2, 3], 1:3)
   cx = cu(x)

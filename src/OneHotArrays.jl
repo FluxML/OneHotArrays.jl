@@ -7,8 +7,8 @@ using LinearAlgebra
 using MLUtils 
 using NNlib
 
-export onehot, onehotbatch, onecold, OneHotArray, 
-  OneHotVector, OneHotMatrix, OneHotLike
+export onehot, onehotbatch, onecold,
+       OneHotArray, OneHotVector, OneHotMatrix, OneHotLike
 
 include("array.jl")
 include("onehot.jl")
