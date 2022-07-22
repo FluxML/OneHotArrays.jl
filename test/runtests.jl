@@ -28,6 +28,5 @@ else
 end
 
 @testset "GPUArrays" begin
-  @test cu(rand(3)) .+ 1 isa CuArray
   include("gpu.jl")
 end
