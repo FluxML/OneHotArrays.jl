@@ -1,9 +1,10 @@
 # OneHotArrays.jl
 
-[![Documentation][https://img.shields.io/badge/docs-latest-blue.svg]][https://fluxml.ai/OneHotArrays.jl/dev/]
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://fluxml.ai/OneHotArrays.jl/dev/)
 [![Tests](https://github.com/FluxML/OneHotArrays.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/FluxML/OneHotArrays.jl/actions/workflows/CI.yml)
 
-Memory efficient one-hot array encodings. Originally part of [Flux.jl](https://github.com/FluxML/Flux.jl).
+This package provides memory efficient one-hot array encodings.
+It was originally part of [Flux.jl](https://github.com/FluxML/Flux.jl).
 
 ```julia
 julia> using OneHotArrays
