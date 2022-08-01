@@ -1,7 +1,7 @@
 """
-    OneHotArray{T,L,N,M,I} <: AbstractArray{Bool,M}
+    OneHotArray{T, L, N, M, I} <: AbstractArray{Bool, M}
 
-These are constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
+Constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
 Parameter `I` is the type of the underlying storage, and `T` its eltype.
 """
 struct OneHotArray{T<:Integer, L, N, var"N+1", I<:Union{T, AbstractArray{T, N}}} <: AbstractArray{Bool, var"N+1"}
@@ -15,12 +15,23 @@ _indices(x::OneHotArray) = x.indices
 _indices(x::Base.ReshapedArray{<: Any, <: Any, <: OneHotArray}) =
   reshape(parent(x).indices, x.dims[2:end])
 
+"""
+    OneHotVector{T, L} = OneHotArray{T, L, 0, 1, T}
+
+Constructed by [`onehot`](@ref). Parameter `T` is the type of the underlying
+storage and `L` is the length of labels.
+"""
 const OneHotVector{T, L} = OneHotArray{T, L, 0, 1, T}
+
+"""
+    OneHotMatrix{T, L, I} = OneHotArray{T, L, 1, 2, I}
+
+Constructed by [`onehotbatch`](@ref). Parameter `I` is the type of the underlying
+storage, `T` is its eltype and `L` is the length of labels.
+"""
 const OneHotMatrix{T, L, I} = OneHotArray{T, L, 1, 2, I}
 
-@doc @doc(OneHotArray)
 OneHotVector(idx, L) = OneHotArray(idx, L)
-@doc @doc(OneHotArray)
 OneHotMatrix(indices, L) = OneHotArray(indices, L)
 
 # use this type so reshaped arrays hit fast paths
