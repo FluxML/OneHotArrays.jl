@@ -18,8 +18,8 @@ _indices(x::Base.ReshapedArray{<: Any, <: Any, <: OneHotArray}) =
 """
     OneHotVector{T, L} = OneHotArray{T, L, 0, 1, T}
 
-Constructed by [`onehot`](@ref). Parameter `T` is the type of the underlying
-storage and `L` is the length of labels.
+A one-hot vector with `L` labels (i.e. `length(A) == L` and `count(A) == 1`) typically constructed by [`onehot`](@ref).
+Stored efficiently as a single index of type `T`, usually `UInt32`.
 """
 const OneHotVector{T, L} = OneHotArray{T, L, 0, 1, T}
 
