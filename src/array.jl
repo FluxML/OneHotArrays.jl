@@ -1,7 +1,10 @@
 """
     OneHotArray{T, L, N, M, I} <: AbstractArray{Bool, M}
 
-Constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
+A one-hot `M`-dimensional array with `L` labels (i.e. `size(A, 1) == L` and `sum(A, dims=1) == 1`)
+stored as a compact `N == M-1`-dimensional array of indices.
+
+Typically constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
 Parameter `I` is the type of the underlying storage, and `T` its eltype.
 """
 struct OneHotArray{T<:Integer, L, N, var"N+1", I<:Union{T, AbstractArray{T, N}}} <: AbstractArray{Bool, var"N+1"}
