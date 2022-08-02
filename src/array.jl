@@ -26,8 +26,8 @@ const OneHotVector{T, L} = OneHotArray{T, L, 0, 1, T}
 """
     OneHotMatrix{T, L, I} = OneHotArray{T, L, 1, 2, I}
 
-Constructed by [`onehotbatch`](@ref). Parameter `I` is the type of the underlying
-storage, `T` is its eltype and `L` is the length of labels.
+A one-hot matrix (with `L` labels) typically constructed using [`onehotbatch`](@ref).
+Stored efficiently as a vector of indices with type `I` and eltype `T`.
 """
 const OneHotMatrix{T, L, I} = OneHotArray{T, L, 1, 2, I}
 
