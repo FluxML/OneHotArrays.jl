@@ -1,7 +1,7 @@
 """
     onehot(x, labels, [default])
 
-Return a `OneHotVector` which is roughly a sparse representation of `x .== labels`.
+Returns a [`OneHotVector`](@ref) which is roughly a sparse representation of `x .== labels`.
 
 Instead of storing say `Vector{Bool}`, it stores the index of the first occurrence 
 of `x` in `labels`. If `x` is not found in labels, then it either returns `onehot(default, labels)`,
@@ -50,7 +50,7 @@ _findval(val, labels::Tuple{}, i::Integer) = nothing
 """
     onehotbatch(xs, labels, [default])
 
-Returns a `OneHotMatrix` where `k`th column of the matrix is [`onehot(xs[k], labels)`](@ref onehot).
+Returns a [`OneHotMatrix`](@ref) where `k`th column of the matrix is [`onehot(xs[k], labels)`](@ref onehot).
 This is a sparse matrix, which stores just a `Vector{UInt32}` containing the indices of the
 nonzero elements.
 
