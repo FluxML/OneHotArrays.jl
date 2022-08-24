@@ -61,6 +61,24 @@ end
 Base.getindex(x::OneHotArray, ::Colon) = BitVector(reshape(x, :))
 Base.getindex(x::OneHotArray{<:Any, <:Any, N}, ::Colon, ::Vararg{Colon, N}) where N = x
 
+function Base.similar(::OneHotArray{T, L}, ::Type{Bool}, dims::Dims) where {T, L}
+  if first(dims) == L
+    indices = ones(T, Base.tail(dims))
+    return OneHotArray(indices, first(dims))
+  else
+    return BitArray(undef, dims)
+  end
+end
+
+function Base.setindex!(x::OneHotLike{<:Any, <:Any, N}, v::Bool, i::Integer, I::Vararg{Integer, N}) where N
+  @boundscheck checkbounds(x, i, I...)
+  if v
+    _indices(x)[I...] = i
+  else
+    error("OneHotArray cannot be set with false values")
+  end
+end
+
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
   print(io, ndims(x) == 1 ? "OneHotVector(" : ndims(x) == 2 ? "OneHotMatrix(" : "OneHotArray(")
   Base.showarg(io, x.indices, false)
@@ -87,6 +105,30 @@ end
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, var"N+1", <:Union{Integer, AbstractArray}}) where {var"N+1"} = Array{Bool, var"N+1"}
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, <:Any, var"N+1", <:AbstractGPUArray}) where {var"N+1"} = AbstractGPUArray{Bool, var"N+1"}
 
+_onehot_compatible(x::OneHotLike) = _isonehot(x)
+_onehot_compatible(x::AbstractVector{Bool}) = count(x) == 1
+_onehot_compatible(x::AbstractArray{Bool}) = all(isone, reduce(+, x; dims=1))
+_onehot_compatible(x::AbstractArray) = _onehot_compatible(BitArray(x))
+
+function OneHotArray(x::OneHotLike)
+  !_onehot_compatible(x) && error("Array is not onehot compatible")
+  return x
+end
+
+function OneHotArray(x::AbstractVector)
+  !_onehot_compatible(x) && error("Array is not onehot compatible")
+  return OneHotArray(findfirst(x), length(x))
+end
+
+function OneHotArray(x::AbstractArray)
+  !_onehot_compatible(x) && error("Array is not onehot compatible")
+  dims = size(x)
+  dim1, dim2 = dims[1], reduce(*, Base.tail(dims))
+  rx = reshape(x, (dim1, dim2))
+  indices = UInt32[findfirst(==(true), col) for col in eachcol(rx)]
+  return OneHotArray(reshape(indices, Base.tail(dims)), dim1)
+end
+
 function Base.cat(x::OneHotLike{<:Any, L}, xs::OneHotLike{<:Any, L}...; dims::Int) where L
   if isone(dims) || any(x -> !_isonehot(x), (x, xs...))
     return cat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...; dims = dims)
@@ -98,11 +140,9 @@ end
 Base.hcat(x::OneHotLike, xs::OneHotLike...) = cat(x, xs...; dims = 2)
 Base.vcat(x::OneHotLike, xs::OneHotLike...) = cat(x, xs...; dims = 1)
 
-# optimized concatenation for matrices and vectors of same parameters
-Base.hcat(x::T, xs::T...) where {L, T <: OneHotLike{<:Any, L, <:Any, 2}} =
-  OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), L)
-Base.hcat(x::T, xs::T...) where {L, T <: OneHotLike{<:Any, L, <:Any, 1}} =
-  OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), L)
+# optimized concatenation for arrays of same parameters
+Base.hcat(x::T, xs::T...) where {L, T <: OneHotLike{<:Any, L, <:Any}} =
+  OneHotArray(reduce(vcat, _indices.(xs); init = _indices(x)), L)
 
 MLUtils.batch(xs::AbstractArray{<:OneHotVector{<:Any, L}}) where L = OneHotMatrix(_indices.(xs), L)
 
@@ -118,7 +158,21 @@ end
 
 Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
 
-Base.argmax(x::OneHotLike; dims = Colon()) =
-  (_isonehot(x) && dims == 1) ?
-    reshape(CartesianIndex.(_indices(x), CartesianIndices(_indices(x))), 1, size(_indices(x))...) :
-    invoke(argmax, Tuple{AbstractArray}, x; dims = dims)
+function Base.argmax(x::OneHotLike; dims = Colon())
+  if _isonehot(x) && dims == 1
+    cart_inds = CartesianIndex.(_indices(x), CartesianIndices(_indices(x)))
+    return reshape(cart_inds, (1, size(_indices(x))...))
+  else
+    return argmax(BitArray(x); dims=dims)
+  end
+end
+
+function Base.argmin(x::OneHotLike; dims = Colon())
+  if _isonehot(x) && dims == 1
+    labelargs = ifelse.(_indices(x) .== 1, 2, 1)
+    cart_inds = CartesianIndex.(labelargs, CartesianIndices(_indices(x)))
+    return reshape(cart_inds, (1, size(_indices(x))...))
+  else
+    return argmin(BitArray(x); dims=dims)
+  end
+end
