@@ -31,13 +31,13 @@ julia> hcat(αβγ...)  # preserves sparsity
 function onehot(x, labels)
   i = _findval(x, labels)
   isnothing(i) && error("Value $x is not in labels")
-  OneHotVector{UInt32, length(labels)}(i)
+  OneHotVector{UInt32}(i, length(labels))
 end
 
 function onehot(x, labels, default)
   i = _findval(x, labels)
   isnothing(i) && return onehot(default, labels)
-  OneHotVector{UInt32, length(labels)}(i)
+  OneHotVector{UInt32}(i, length(labels))
 end
 
 _findval(val, labels) = findfirst(isequal(val), labels)
@@ -147,4 +147,4 @@ ChainRulesCore.@non_differentiable onehot(::Any...)
 ChainRulesCore.@non_differentiable onehotbatch(::Any...)
 ChainRulesCore.@non_differentiable onecold(::Any...)
 
-ChainRulesCore.@non_differentiable (::Type{<:OneHotArray})(indices::Any, L::Integer)
+ChainRulesCore.@non_differentiable (::Type{<:OneHotArray})(indices::Any, L::Int)
