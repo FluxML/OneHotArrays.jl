@@ -65,7 +65,7 @@ function Base.getindex(x::OneHotArray{<:Any, N}, i::Integer, I::Vararg{Any, N}) 
   return x.indices[I...] .== i
 end
 
-function Base.getindex(x::OneHotArray, ::Colon, I::Union{Colon, Integer}...)
+function Base.getindex(x::OneHotArray, ::Colon, I::Union{Colon, <:Integer}...)
   @boundscheck checkbounds(x, :, I...)
   return OneHotArray(x.indices[I...], x.nlabels)
 end
@@ -100,10 +100,10 @@ _onehot_bool_type(::OneHotLike{<:Any, <:Any, var"N+1", <:Union{Integer, Abstract
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, var"N+1", <:AbstractGPUArray}) where {var"N+1"} = AbstractGPUArray{Bool, var"N+1"}
 
 function Base.cat(x::OneHotLike, xs::OneHotLike...; dims::Int)
-  L = _check_nlabels(x, xs...)
   if isone(dims) || any(x -> !_isonehot(x), (x, xs...))
     return cat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...; dims = dims)
   else
+    L = _check_nlabels(x, xs...)
     return OneHotArray(cat(_indices(x), _indices.(xs)...; dims = dims - 1), L)
   end
 end

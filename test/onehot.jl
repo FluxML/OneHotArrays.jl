@@ -26,6 +26,12 @@
   @test onecold(onehot(0.0, floats)) == 1
   @test onecold(onehot(-0.0, floats)) == 2  # as it uses isequal
   @test onecold(onehot(Inf, floats)) == 5
+
+  # inferrabiltiy tests
+  @test @inferred(onehot(20, 10:10:30)) == [false, true, false]
+  @test @inferred(onehot(40, (10,20,30), 20)) == [false, true, false]
+  @test @inferred(onehotbatch([20, 10], 10:10:30)) == Bool[0 1; 1 0; 0 0]
+  @test @inferred(onehotbatch([40, 10], (10,20,30), 20)) == Bool[0 1; 1 0; 0 0]
 end
 
 @testset "onecold" begin
