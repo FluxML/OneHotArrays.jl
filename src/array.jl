@@ -65,7 +65,7 @@ function Base.getindex(x::OneHotArray{<:Any, N}, i::Integer, I::Vararg{Any, N}) 
   return x.indices[I...] .== i
 end
 
-function Base.getindex(x::OneHotArray, ::Colon, I::Union{Colon, <:Integer}...)
+function Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, I::Vararg{Any, N}) where N
   @boundscheck checkbounds(x, :, I...)
   return OneHotArray(x.indices[I...], x.nlabels)
 end
