@@ -60,13 +60,11 @@ end
 
 Base.size(x::OneHotArray) = (x.nlabels, size(x.indices)...)
 
-function Base.getindex(x::OneHotArray{<:Any, N}, i::Integer, I::Vararg{Any, N}) where N
-  @boundscheck checkbounds(x, i, I...)
+function Base.getindex(x::OneHotArray{<:Any, N}, i::Int, I::Vararg{Int, N}) where N
+  @boundscheck 1 <= i <= x.nlabels
   return x.indices[I...] .== i
 end
-
 function Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, I::Vararg{Any, N}) where N
-  @boundscheck checkbounds(x, :, I...)
   return OneHotArray(x.indices[I...], x.nlabels)
 end
 
