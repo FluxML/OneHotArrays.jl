@@ -15,7 +15,7 @@ end
   # vector indexing
   @test ov[3] == (ov.indices == 3)
   @test ov[:] == ov
-  
+
   # matrix indexing
   @test om[3, 3] == (om.indices[3] == 3)
   @test om[:, 3] == OneHotVector(om.indices[3], 10)

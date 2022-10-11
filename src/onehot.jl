@@ -135,6 +135,7 @@ function onecold(y::AbstractArray, labels = 1:size(y, 1))
 end
 
 _fast_argmax(x::AbstractArray) = dropdims(argmax(x; dims = 1); dims = 1)
+_fast_argmax(x::OneHotArray) = _indices(x)
 function _fast_argmax(x::OneHotLike)
   if _isonehot(x)
     return _indices(x)
