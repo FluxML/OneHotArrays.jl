@@ -106,56 +106,12 @@ end
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, var"N+1", <:Union{Integer, AbstractArray}}) where {var"N+1"} = Array{Bool, var"N+1"}
 _onehot_bool_type(::OneHotLike{<:Any, <:Any, var"N+1", <:AbstractGPUArray}) where {var"N+1"} = AbstractGPUArray{Bool, var"N+1"}
 
-_chk_cat_dim(d, x, y) = (x == y) ? x :
-  throw(DimensionMismatch("mismatch in dimension $d (expected $x got $y)"))
-
-_cat_size(iscatdims, dims::NTuple{N}) where N = dims
-function _cat_size(iscatdims, dims::NTuple{N}, x) where N
-  dims = ntuple(Val(N)) do i
-    d = dims[i]
-    sx = size(x, i)
-    iscatdims[i] ? d + sx : _chk_cat_dim(i, d, sx)
-  end
-
-  return dims
-end
-function _cat_size(iscatdims, dims::NTuple{N}, x, tail...) where N
-  dims = _cat_size(iscatdims, dims, x)
-  return _cat_size(iscatdims, dims, tail...)
-end
-
-_cat_similar(::Integer, sz) = zeros(Bool, sz)
-_cat_similar(x, sz) = similar(x, Bool, sz)
-
 _notall_onehot(x::OneHotArray, xs::OneHotArray...) = false
 _notall_onehot(x::OneHotLike, xs::OneHotLike...) = any(x -> !_isonehot(x), (x, xs...))
 
-function _cat_fallback(x::OneHotLike{<:Any, <:Any, N}, xs::OneHotLike...; dims::Int) where N
-  # this is adapted from Base
-  # https://github.com/JuliaLang/julia/blob/5544a0fab7648cfa61fe79cd557a7504a92ec1b5/base/abstractarray.jl#L1730-L1738
-  # invoking the less specialized version of cat results in even worse performance
-  # we really only want to be in this method if dims != 1 and all the labels match
-  # without the number of labels in the type, we can't do this at compile time
-  # so we reimplement some stuff from the less specialized cat
-  catdims = ntuple(in(dims), Val(N))
-  catsize = _cat_size(catdims, size(x), xs...)
-  y = _cat_similar(_indices(x), catsize)
-  offset = ones(Int, N)
-  for xi in (x, xs...)
-    nelements = size(xi)
-    I = ntuple(N) do i
-      catdims[i] ? (offset[i]:(offset[i] + nelements[i] - 1)) : Colon()
-    end
-    y[I...] = xi
-    offset .+= nelements
-  end
-
-  return y
-end
-
 function Base.cat(x::OneHotLike{<:Any, <:Any, N}, xs::OneHotLike...; dims::Int) where N
   if isone(dims) || _notall_onehot(x, xs...)
-    return _cat_fallback(x, xs...; dims = dims)
+    return cat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...; dims = dims)
   else
     L = _nlabels(x, xs...)
 
@@ -165,7 +121,7 @@ end
 
 Base.hcat(x::OneHotLike, xs::OneHotLike...) = cat(x, xs...; dims = 2)
 Base.vcat(x::OneHotLike, xs::OneHotLike...) =
-  _cat_fallback(x, xs...; dims = 1)
+  vcat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...)
 
 # optimized concatenation for matrices and vectors of same parameters
 Base.hcat(x::OneHotMatrix, xs::OneHotMatrix...) =
