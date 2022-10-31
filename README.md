@@ -1,3 +1,5 @@
+<img align="right" width="200px" src="https://github.com/FluxML/OneHotArrays.jl/raw/main/docs/src/assets/logo.png">
+
 # OneHotArrays.jl
 
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://fluxml.ai/OneHotArrays.jl/dev/)
