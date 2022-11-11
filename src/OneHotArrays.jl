@@ -4,7 +4,7 @@ using Adapt
 using ChainRulesCore
 using GPUArraysCore
 using LinearAlgebra
-using MLUtils 
+using Compat: Compat
 using NNlib
 
 export onehot, onehotbatch, onecold,

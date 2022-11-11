@@ -129,7 +129,16 @@ Base.hcat(x::OneHotMatrix, xs::OneHotMatrix...) =
 Base.hcat(x::OneHotVector, xs::OneHotVector...) =
   OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), _nlabels(x, xs...))
 
-MLUtils.batch(xs::AbstractArray{<:OneHotVector}) = OneHotMatrix(_indices.(xs), _nlabels(xs...))
+if isdefined(Base, :stack)
+  import Base: _stack
+else
+  import Compat: _stack
+end
+function _stack(::Colon, xs::AbstractArray{<:OneHotArray})
+  n = _nlabels(first(xs))
+  all(x -> _nlabels(x)==n, xs) || throw(DimensionMismatch("The number of labels are not the same for all one-hot arrays."))
+  OneHotArray(Compat.stack(_indices, xs), n)
+end
 
 Adapt.adapt_structure(T, x::OneHotArray) = OneHotArray(adapt(T, _indices(x)), x.nlabels)
 
