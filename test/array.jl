@@ -64,6 +64,13 @@ end
   @test cat(oa, oa; dims = 3) isa OneHotArray
   @test cat(oa, oa; dims = 1) == cat(collect(oa), collect(oa); dims = 1)
 
+  # stack
+  @test stack([ov, ov]) == hcat(ov, ov)
+  @test stack([ov, ov, ov]) isa OneHotMatrix
+  @test stack([om, om]) == cat(om, om; dims = 3)
+  @test stack([om, om]) isa OneHotArray
+  @test stack([oa, oa, oa, oa]) isa OneHotArray
+
   # proper error handling of inconsistent sizes
   @test_throws DimensionMismatch hcat(ov, ov2)
   @test_throws DimensionMismatch hcat(om, om2)

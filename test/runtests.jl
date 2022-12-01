@@ -1,5 +1,6 @@
 using OneHotArrays
 using Test
+using Compat: stack
 
 @testset "OneHotArray" begin
   include("array.jl")
