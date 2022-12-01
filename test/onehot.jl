@@ -52,6 +52,10 @@ end
   cold = onecold(hot, labels)
 
   @test cold == data
+
+  @test_throws DimensionMismatch onecold([0.3, 0.2], (:a, :b, :c))
+  @test_throws DimensionMismatch onecold([0.3, 0.2, 0.5, 0.99], (:a, :b, :c))
+  @test_throws ArgumentError onecold([0.3, NaN, 0.5], (:a, :b, :c))
 end
 
 @testset "onehotbatch indexing" begin

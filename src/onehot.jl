@@ -126,8 +126,18 @@ julia> onecold([ 1  0  0  1  0  1  0  1  0  0  1
 "abeacadabea"
 ```
 """
-onecold(y::AbstractVector, labels = 1:length(y)) = labels[argmax(y)]
+function onecold(y::AbstractVector, labels = 1:length(y))
+  nl = length(labels)
+  ny = length(y)
+  nl == ny || throw(DimensionMismatch("onecold got $nl labels for a vector of length $ny, these must agree"))
+  ymax, i = findmax(y)
+  ymax isa Number && isnan(ymax) && throw(ArgumentError("maximum value found by onecold is $ymax"))
+  labels[i]
+end
 function onecold(y::AbstractArray, labels = 1:size(y, 1))
+  nl = length(labels)
+  ny = size(y, 1)
+  nl == ny || throw(DimensionMismatch("onecold got $nl labels for an array with size(y, 1) == $ny, these must agree"))
   indices = _fast_argmax(y)
   xs = isbits(labels) ? indices : collect(indices) # non-bit type cannot be handled by CUDA
 
