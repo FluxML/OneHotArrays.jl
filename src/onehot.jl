@@ -100,6 +100,12 @@ function _onehotbatch(data, labels, default)
   return OneHotArray(indices, length(labels))
 end
 
+function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
+  offset = 1 - first(labels)
+  indices = UInt32.(data .+ offset)
+  return OneHotArray(indices, length(labels))
+end
+
 """
     onecold(y::AbstractArray, labels = 1:size(y,1))
 
