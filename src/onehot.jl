@@ -103,6 +103,7 @@ end
 function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
   offset = 1 - first(labels)
   indices = UInt32.(data .+ offset)
+  maximum(indices) > last(labels) + offset && error("Largest value not found in labels")
   return OneHotArray(indices, length(labels))
 end
 
