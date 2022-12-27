@@ -26,6 +26,16 @@ end
   @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
 end
 
+@testset "onehotbatch(::CuArray, ::UnitRange)" begin
+  y1 = onehotbatch([1, 3, 0, 2], 0:9) |> cu
+  y2 = onehotbatch([1, 3, 0, 2] |> cu, 0:9)
+  @test y1.indices == y2.indices
+  @test_broken y1 == y2
+
+  @test_throws Exception onehotbatch([1, 3, 0, 2] |> cu, 1:10)
+  @test_throws Exception onehotbatch([1, 3, 0, 2] |> cu, -2:2)
+end
+
 @testset "onecold gpu" begin
   y = onehotbatch(ones(3), 1:10) |> cu;
   l = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
