@@ -27,6 +27,12 @@
   @test onecold(onehot(-0.0, floats)) == 2  # as it uses isequal
   @test onecold(onehot(Inf, floats)) == 5
 
+  # UnitRange fast path
+  @test onehotbatch([1,3,0,4], 0:4) == onehotbatch([1,3,0,4], Tuple(0:4))
+  @test onehotbatch([2 3 7 4], 2:7) == onehotbatch([2 3 7 4], Tuple(2:7))
+  @test_throws Exception onehotbatch([2, -1], 0:4)
+  @test_throws Exception onehotbatch([2, 5], 0:4)
+
   # inferrabiltiy tests
   @test @inferred(onehot(20, 10:10:30)) == [false, true, false]
   @test @inferred(onehot(40, (10,20,30), 20)) == [false, true, false]
