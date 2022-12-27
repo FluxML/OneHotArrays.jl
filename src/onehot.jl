@@ -101,7 +101,8 @@ function _onehotbatch(data, labels, default)
 end
 
 function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
-  lo, hi = extrema(data)
+  # lo, hi = extrema(data)  # fails on Julia 1.6
+  lo, hi = minimum(data), maximum(data)
   lo < first(labels) && error("Value $lo not found in labels")
   hi > last(labels) && error("Value $hi not found in labels")
   offset = 1 - first(labels)
