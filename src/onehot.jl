@@ -110,6 +110,16 @@ function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<
   return OneHotArray(indices, length(labels))
 end
 
+function onehotbatch(data::AbstractGPUArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
+  offset = 1 - first(labels)
+  # The bounds check with extrema synchronises, often 10x slower than rest of the function.
+  indices = map(data) do datum
+              checkbounds(labels, datum)
+              UInt32(datum + offset)
+            end
+  return OneHotArray(indices, length(labels))
+end
+
 """
     onecold(y::AbstractArray, labels = 1:size(y,1))
 
