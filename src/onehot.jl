@@ -113,10 +113,10 @@ end
 function onehotbatch(data::AbstractGPUArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
   offset = 1 - first(labels)
   indices = map(data) do datum
-              i = UInt32(datum + offset)
-              checkbounds(labels, i)
-              i
-            end
+    i = UInt32(datum + offset)
+    checkbounds(labels, i)
+    i
+  end
   return OneHotArray(indices, length(labels))
 end
 
