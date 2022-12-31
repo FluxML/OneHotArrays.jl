@@ -30,7 +30,7 @@ end
   y1 = onehotbatch([1, 3, 0, 2], 0:9) |> cu
   y2 = onehotbatch([1, 3, 0, 2] |> cu, 0:9)
   @test y1.indices == y2.indices
-  @test_broken y1 == y2
+  @test_broken y1 == y2  # issue 28
 
   @test_throws Exception onehotbatch([1, 3, 0, 2] |> cu, 1:10)
   @test_throws Exception onehotbatch([1, 3, 0, 2] |> cu, -2:2)

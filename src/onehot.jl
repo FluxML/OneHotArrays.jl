@@ -101,21 +101,21 @@ function _onehotbatch(data, labels, default)
 end
 
 function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
-  # lo, hi = extrema(data)  # fails on Julia 1.6
-  lo, hi = minimum(data), maximum(data)
+  lo, hi = extrema(data)  # fails on Julia 1.6
   lo < first(labels) && error("Value $lo not found in labels")
   hi > last(labels) && error("Value $hi not found in labels")
   offset = 1 - first(labels)
   indices = UInt32.(data .+ offset)
   return OneHotArray(indices, length(labels))
 end
-
+# That bounds check with extrema synchronises on GPU, much slower than rest of the function,
+# hence add a special method, with a less helpful error message:
 function onehotbatch(data::AbstractGPUArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
   offset = 1 - first(labels)
-  # The bounds check with extrema synchronises, often 10x slower than rest of the function.
   indices = map(data) do datum
-              checkbounds(labels, datum)
-              UInt32(datum + offset)
+              i = UInt32(datum + offset)
+              checkbounds(labels, i)
+              i
             end
   return OneHotArray(indices, length(labels))
 end
