@@ -28,12 +28,12 @@ jobs:
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         env:
           cache-name: cache-artifacts
         with:
@@ -44,9 +44,20 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+
+      - name: "Run test without coverage report"
+        uses: julia-actions/julia-runtest@v1
+        if: ${{ !contains(fromJson('["1", "1.6"]'), matrix.version) || matrix.os != 'ubuntu-latest' }}
+        with:
+          coverage: false
+
+      - name: "Run test with coverage report"
+        uses: julia-actions/julia-runtest@v1
+        if: contains(fromJson('["1", "1.6"]'), matrix.version) && matrix.os == 'ubuntu-latest'
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v2
+        if: contains(fromJson('["1", "1.6"]'), matrix.version) && matrix.os == 'ubuntu-latest'
+      - uses: codecov/codecov-action@v3
+        if: contains(fromJson('["1", "1.6"]'), matrix.version) && matrix.os == 'ubuntu-latest'
         with:
           files: lcov.info
   
@@ -54,7 +65,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.6'
