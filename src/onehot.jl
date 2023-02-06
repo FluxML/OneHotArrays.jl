@@ -83,20 +83,36 @@ julia> reshape(1:15, 3, 5) * oh  # this matrix multiplication is done efficientl
 """
 onehotbatch(data, labels, default...) = _onehotbatch(data, length(labels) < 32 ? Tuple(labels) : labels, default...)
 
-function _onehotbatch(data, labels)
-  indices = UInt32[something(_findval(i, labels), 0) for i in data]
-  if 0 in indices
+function _onehotbatch(data, labels)  # this accepts any iterator
+  indices = UInt32[something(_findval(x, labels), 0) for x in data]
+  if any(iszero, indices)
     for x in data
-      isnothing(_findval(x, labels)) && error("Value $x not found in labels")
+      isnothing(_findval(x, labels)) && throw(ArgumentError("Value x = $x not found in labels = $labels"))
     end
+  end
+  return OneHotArray(indices, length(labels))
+end
+function _onehotbatch(data::AbstractArray, labels)  # this works for GPUArrays too
+  indices = similar(data, UInt32)
+  map!(x -> something(_findval(x, labels), 0), indices, data)
+  if any(iszero, indices)
+    badx = @allowscalar data[findfirst(iszero, indices)]
+    throw(ArgumentError("Value x = $badx not found in labels = $labels"))
   end
   return OneHotArray(indices, length(labels))
 end
 
 function _onehotbatch(data, labels, default)
   default_index = _findval(default, labels)
-  isnothing(default_index) && error("Default value $default is not in labels")
-  indices = UInt32[something(_findval(i, labels), default_index) for i in data]
+  isnothing(default_index) && throw(ArgumentError("Default value $default is not in labels = $labels"))
+  indices = UInt32[something(_findval(x, labels), default_index) for x in data]
+  return OneHotArray(indices, length(labels))
+end
+function _onehotbatch(data::AbstractArray, labels, default)
+  default_index = _findval(default, labels)
+  isnothing(default_index) && throw(ArgumentError("Default value $default is not in labels = $labels"))
+  indices = similar(data, UInt32)
+  map!(x -> something(_findval(x, labels), default_index), indices, data)
   return OneHotArray(indices, length(labels))
 end
 

@@ -1,29 +1,23 @@
 
-# Tests from Flux, probably not the optimal testset organisation!
-
-@testset "CUDA" begin
-  x = randn(5, 5)
-  cx = cu(x)
-  @test cx isa CuArray
-
-  @test_skip onecold(cu([1.0, 2.0, 3.0])) == 3  # passes with CuArray with Julia 1.6, but fails with JLArray
-
-  x = onehotbatch([1, 2, 3], 1:3)
-  cx = cu(x)
-  @test cx isa OneHotMatrix && cx.indices isa CuArray
-  @test (cx .+ 1) isa CuArray
-
+@testset "onehotbatch gpu" begin
+  # move to GPU after construction
+  x = onehotbatch([1, 2, 3, 2], 1:3)
+  @test cu(x) isa OneHotMatrix
+  @test cu(x).indices isa CuArray
+  
+  # broadcast style works:
+  @test (cu(x) .+ 1) isa CuArray
   xs = rand(5, 5)
-  ys = onehotbatch(1:5,1:5)
+  ys = onehotbatch(rand(1:5, 5), 1:5)
   @test collect(cu(xs) .+ cu(ys)) ≈ collect(xs .+ ys)
-end
 
-@testset "onehot gpu" begin
-  y = onehotbatch(ones(3), 1:2) |> cu;
-  @test (repr("text/plain", y); true)
-
-  gA = rand(3, 2) |> cu;
-  @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
+  # move to GPU before construction
+  z1 = onehotbatch(cu([3f0, 1f0, 2f0, 2f0]), (1.0, 2f0, 3))
+  @test z1.indices isa CuArray
+  z2 = onehotbatch(cu([3f0, 1f0, 2f0, 2f0]), [1, 2], 2)  # with default
+  @test z2.indices isa CuArray
+  @test_throws ArgumentError onehotbatch(cu([1, 2, 3]), [1, 2])  # friendly error, not scalar indexing
+  @test_throws ArgumentError onehotbatch(cu([1, 2, 3]), [1, 2], 5)
 end
 
 @testset "onehotbatch(::CuArray, ::UnitRange)" begin
@@ -46,6 +40,17 @@ end
   @test onecold(y) isa CuArray
   @test y[3,:] isa CuArray
   @test onecold(y, l) == ['a', 'a', 'a']
+
+  @test_skip onecold(cu([1.0, 2.0, 3.0])) == 3  # passes with CuArray with Julia 1.6, but fails with JLArray
+end
+
+@testset "matrix multiplication gpu" begin
+  y = onehotbatch([1, 2, 1], [1, 2]) |> cu;
+  A = rand(3, 2) |> cu;
+  
+  @test_broken collect(A * y) ≈ collect(A) * collect(y)
+  
+  @test_broken gradient(A -> sum(abs, A * y), A)[1] isa CuArray  # gather!(dst::JLArray, ...) fails
 end
 
 @testset "onehot forward map to broadcast" begin
