@@ -1,8 +1,8 @@
 """
     OneHotArray{T, N, M, I} <: AbstractArray{Bool, M}
-    OneHotArray(indices, L)
+    OneHotArray(indices, L, [axis=1])
 
-A one-hot `M`-dimensional array with `L` labels (i.e. `size(A, 1) == L` and `sum(A, dims=1) == 1`)
+A one-hot `M`-dimensional array with `L` labels (i.e. `size(A, axis) == L` and `sum(A, dims=axis) == 1`)
 stored as a compact `N == M-1`-dimensional array of indices.
 
 Typically constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
@@ -15,7 +15,10 @@ end
 OneHotArray{T, N, I}(indices, L::Int) where {T, N, I} = OneHotArray{T, N, N+1, I}(indices, L)
 OneHotArray(indices::T, L::Int) where {T<:Integer} = OneHotArray{T, 0, 1, T}(indices, L)
 OneHotArray(indices::I, L::Int) where {T, N, I<:AbstractArray{T, N}} = OneHotArray{T, N, N+1, I}(indices, L)
-OneHotArray(indices, L, axis::Int) = PermutedDimsArray(OneHotArray(indices, L), [axis, 1])
+function OneHotArray(indices, L, axis::Int)
+  a = collect(1:length(size(indices))+1)
+  PermutedDimsArray(OneHotArray(indices, L), insert!(a, 1, popat!(a, axis)))
+end
 
 _indices(x::OneHotArray) = x.indices
 _indices(x::Base.ReshapedArray{<:Any, <:Any, <:OneHotArray}) =
