@@ -16,8 +16,8 @@ OneHotArray{T, N, I}(indices, L::Int) where {T, N, I} = OneHotArray{T, N, N+1, I
 OneHotArray(indices::T, L::Int) where {T<:Integer} = OneHotArray{T, 0, 1, T}(indices, L)
 OneHotArray(indices::I, L::Int) where {T, N, I<:AbstractArray{T, N}} = OneHotArray{T, N, N+1, I}(indices, L)
 function OneHotArray(indices, L, axis::Int)
-  a = collect(1:length(size(indices))+1)
-  PermutedDimsArray(OneHotArray(indices, L), insert!(a, 1, popat!(a, axis)))
+  perm = ntuple(d -> (d==axis ? 1 : (d==1 ? axis : d)), length(size(indices))+1)
+  PermutedDimsArray(OneHotArray(indices, L), perm)
 end
 
 _indices(x::OneHotArray) = x.indices
