@@ -49,7 +49,7 @@ end
   # linear indexing
   @test om[11] == om[1, 2]
   @test oa[52] == oa[2, 1, 2]
-  @test oa2[55] == oa2[1, 2, 2]
+  @test oa2[56] == oa2[1, 2, 2]
 
   # bounds checks
   @test_throws BoundsError ov[0]
