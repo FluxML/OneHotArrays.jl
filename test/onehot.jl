@@ -16,6 +16,7 @@
   @test onehotbatch("zbc", ('a', 'b', 'c'), 'a') == Bool[1 0 0; 0 1 0; 0 0 1]
 
   @test onehotbatch([10, 20], [30, 40, 50], 30) == Bool[1 1; 0 0; 0 0]
+  
 
   @test_throws Exception onehotbatch([:a, :d], [:a, :b, :c])
   @test_throws Exception onehotbatch([:a, :d], (:a, :b, :c))
@@ -68,4 +69,13 @@ end
   y = onehotbatch(ones(3), 1:10)
   @test y[:,1] isa OneHotVector
   @test y[:,:] isa OneHotMatrix
+end
+
+@testset "onehotbatch dims" begin
+  # basic tests
+  @test onehotbatch([20, 10], 10:10:30; dims=2) == Bool[0 1 0; 1 0 0]
+  @test onehotbatch([10, 20], [30, 40, 50], 30; dims=2) == Bool[1 0 0; 1 0 0]
+  # higher dimensions
+  @test size(onehotbatch(reshape(collect(1:12), 3, 4), 1:12; dims=2)) == (3, 12, 4) # test shape
+  @test sum(onehotbatch(reshape(collect(1:12), 3, 4), 1:12; dims=2), dims=2)[:] == ones(12) # test onehot on the second dim
 end
