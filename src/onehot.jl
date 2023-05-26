@@ -98,18 +98,17 @@ julia> reshape(1:15, 3, 5) * oh  # this matrix multiplication is done efficientl
 ```
 """
 
-function onehotbatch(args...; dims::Integer)
-  out = onehotbatch(args...)
+onehotbatch(data::String, labels, default...; dims::Integer=1) = onehotbatch(collect(data), labels, default...; dims=dims)
+onehotbatch(data::AbstractRange, labels, default...; dims::Integer=1) = onehotbatch(collect(data), labels, default...; dims=dims)
+function onehotbatch(data::AbstractArray, labels, default...; dims::Integer=1)
+  out = _onehotbatch(data, length(labels) < 32 ? Tuple(labels) : labels, default...)
   if dims==1
     out
   else
-    indices = args[1]
-    perm = ntuple(d -> d==dims ? 1 : (d==1 ? dims : d), length(size(indices))+1)
+    perm = ntuple(d -> d==dims ? 1 : (d==1 ? dims : d), length(size(data))+1)
     PermutedDimsArray(out, perm)
   end
 end
-
-onehotbatch(data, labels, default...) = _onehotbatch(data, length(labels) < 32 ? Tuple(labels) : labels, default...)
 
 function _onehotbatch(data, labels)
   indices = UInt32[something(_findval(i, labels), 0) for i in data]
