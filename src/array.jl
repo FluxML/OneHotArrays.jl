@@ -1,8 +1,8 @@
 """
     OneHotArray{T, N, M, I} <: AbstractArray{Bool, M}
-    OneHotArray(indices, L, [axis=1])
+    OneHotArray(indices, L)
 
-A one-hot `M`-dimensional array with `L` labels (i.e. `size(A, axis) == L` and `sum(A, dims=axis) == 1`)
+A one-hot `M`-dimensional array with `L` labels (i.e. `size(A, 1) == L` and `sum(A, dims=1) == 1`)
 stored as a compact `N == M-1`-dimensional array of indices.
 
 Typically constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
@@ -69,7 +69,7 @@ end
 # the method above is faster on the CPU but will scalar index on the GPU
 # so we define the method below to pass the extra indices directly to GPU array
 function Base.getindex(x::OneHotArray{<:Any, N, <:Any, <:AbstractGPUArray},
-  i::Int,
+                       i::Int,
                        I::Vararg{Any, N}) where N
   @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
   return x.indices[I...] .== i
@@ -154,5 +154,5 @@ Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
 
 Base.argmax(x::OneHotLike; dims = Colon()) =
   (_isonehot(x) && dims == 1) ?
-  reshape(CartesianIndex.(_indices(x), CartesianIndices(_indices(x))), 1, size(_indices(x))...) :
+    reshape(CartesianIndex.(_indices(x), CartesianIndices(_indices(x))), 1, size(_indices(x))...) :
     invoke(argmax, Tuple{AbstractArray}, x; dims = dims)
