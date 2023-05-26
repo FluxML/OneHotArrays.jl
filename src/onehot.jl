@@ -48,7 +48,7 @@ end
 _findval(val, labels::Tuple{}, i::Integer) = nothing
 
 """
-    onehotbatch(xs, labels, [default])
+    onehotbatch(xs, labels, [default]; dims::Integer=1)
 
 Returns a [`OneHotMatrix`](@ref) where `k`th column of the matrix is [`onehot(xs[k], labels)`](@ref onehot).
 This is a sparse matrix, which stores just a `Vector{UInt32}` containing the indices of the
@@ -64,6 +64,8 @@ i.e. `result[:, k...] == onehot(xs[k...], labels)`.
 Note that `xs` can be any iterable, such as a string. And that using a tuple
 for `labels` will often speed up construction, certainly for less than 32 classes.
 
+If dims keyword is given, the onehot vectors lie on the [dims] dimension rather than the first one.
+
 # Examples
 ```jldoctest
 julia> oh = onehotbatch("abracadabra", 'a':'e', 'e')
@@ -73,6 +75,20 @@ julia> oh = onehotbatch("abracadabra", 'a':'e', 'e')
  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅
  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅
  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅
+
+ julia> oh = onehotbatch("abracadabra", 'a':'e', 'e'; dims=2)
+5×11 OneHotMatrix(::Vector{UInt32}) with eltype Bool:
+ 1  ⋅  ⋅  ⋅  ⋅
+ ⋅  1  ⋅  ⋅  ⋅
+ ⋅  ⋅  ⋅  ⋅  1
+ 1  ⋅  ⋅  ⋅  ⋅
+ ⋅  ⋅  1  ⋅  ⋅
+ 1  ⋅  ⋅  ⋅  ⋅
+ ⋅  ⋅  ⋅  1  ⋅
+ 1  ⋅  ⋅  ⋅  ⋅
+ ⋅  1  ⋅  ⋅  ⋅
+ ⋅  ⋅  ⋅  ⋅  1
+ 1  ⋅  ⋅  ⋅  ⋅
 
 julia> reshape(1:15, 3, 5) * oh  # this matrix multiplication is done efficiently
 3×11 Matrix{Int64}:

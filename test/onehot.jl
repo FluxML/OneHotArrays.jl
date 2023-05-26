@@ -77,4 +77,6 @@ end
   # higher dimensions
   @test size(onehotbatch(reshape(collect(1:12), 3, 4), 1:12; dims=2)) == (3, 12, 4) # test shape
   @test sum(onehotbatch(reshape(collect(1:12), 3, 4), 1:12; dims=2), dims=2)[:] == ones(12) # test onehot on the second dim
+  # works with strings
+  @test onehotbatch("ba", 'a':'c'; dims=2) == Bool[0 1 0; 1 0 0]
 end
