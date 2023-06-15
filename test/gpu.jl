@@ -23,10 +23,10 @@ end
   @test (repr("text/plain", y); true)
 
   gA = rand(3, 2) |> cu;
-  if VERSION >= v"1.9"
-    @test gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
+  if VERSION >= v"1.9" && CUDA.functional()
+    @test gradient(A -> sum(A * y), gA)[1] isa CuArray 
   else
-    @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray
+    @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
   end
 end
 
