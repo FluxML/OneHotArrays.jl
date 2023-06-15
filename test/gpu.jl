@@ -23,7 +23,11 @@ end
   @test (repr("text/plain", y); true)
 
   gA = rand(3, 2) |> cu;
-  @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
+  if VERSION >= v"1.9"
+    @test gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
+  else
+    @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray
+  end
 end
 
 @testset "onehotbatch(::CuArray, ::UnitRange)" begin
