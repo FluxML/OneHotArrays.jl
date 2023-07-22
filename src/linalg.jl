@@ -10,7 +10,7 @@ function Base.:(*)(A::AbstractMatrix, B::OneHotArray{T,2,1,L,Ax}) where {T,L,Ax}
   return NNlib.gather(A, [v.index for v in B.onehotvectors])
 end
 
-function Base.:(*)(A::AbstractMatrix, B::Adjoint{Bool, <:OneHotMatrix})
+function Base.:(*)(A::AbstractMatrix, B::Adjoint{Bool, <:OneHotArray})
   B_dim = length(_indices(parent(B)))
   size(A, 2) == B_dim || throw(DimensionMismatch("Matrix column must correspond with OneHot size: $(size(A, 2)) != $B_dim"))
   return NNlib.scatter(+, A, _indices(parent(B)), dstsize=(size(A,1), size(B,2)))
