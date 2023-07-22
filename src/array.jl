@@ -3,7 +3,6 @@
     OneHotVector(index, L)
 
 A one-hot vector with `L` labels (i.e. `length(A) == L` and `count(A) == 1`).
-Stored efficiently as a single index of type `T`, usually `Int32`.
 """
 struct OneHotVector{T,L} # <: AbstractVector{Bool} # this does everything but is too limiting
   index::Integer
@@ -14,7 +13,7 @@ struct OneHotVector{T,L} # <: AbstractVector{Bool} # this does everything but is
 end
 
 OneHotVector(t::Type, index, nlabels) = OneHotVector{t,nlabels}(index)
-OneHotVector(index, nlabels) = OneHotVector{Int32,nlabels}(index)
+OneHotVector(index, nlabels) = OneHotVector{Float32,nlabels}(index)
 Base.size(x::OneHotVector{T,L}) where {T,L} = (L,)
 function Base.getindex(x::OneHotVector{T,L}, i::Integer) where {T,L}
   @boundscheck 1 <= i <= L
@@ -29,7 +28,7 @@ struct OneHotArray{T,N,M,L,A} <: AbstractArray{T,N}
     N = M+1
     @assert onehotaxis isa Integer "onehot axis must be integer"
     @assert 1 <= onehotaxis <= N "onehot axis out of range [1,$N]"
-    new{T,N,M,L,onehotaxis}(onehotaxis, onehotvectors)
+    new{T,N,M,L,onehotaxis}(onehotvectors)
   end
 end
 onehotaxis(x::OneHotArray{T,N,M,L,A}) where {T,N,M,L,A} = A
@@ -60,35 +59,35 @@ function Base.getindex(x::OneHotArray{T,N,M,L}, i::Vararg{Integer,N}) where {T,N
 end
 
 function Base.show(io::IO, x::OneHotArray{T,N,M,L}) where {T,N,M,L}
-  z = zeros(T, size(x))
+  z = zeros(Int32, size(x))
   # loop efficiently over only the ones
   for ext_ind in eachindex(IndexCartesian(), x.onehotvectors)
     index_pre = Tuple(ext_ind)[1:onehotaxis(x)]
     index_post = Tuple(ext_ind)[onehotaxis(x)+1:end]
     intern_ind = x.onehotvectors[ext_ind].index
     ind = CartesianIndex(CartesianIndex(index_pre..., intern_ind, index_post...))
-    setindex!(z, convert(T, 1), ind)
+    setindex!(z, convert(Int32, 1), ind)
   end
   Base.show(io, z)
 end
 
-function Base.showarg(io::IO, x::OneHotArray{T,N,M,L}, toplevel) where {T,N,M,L}
+function Base.showarg(io::IO, x::OneHotArray{T,N,M,L,A}, toplevel) where {T,N,M,L,A}
   print(io, "$(size(x)) OneHotArray")
   toplevel && print(io, " with one hot axis $A and eltype $T")
   return nothing
 end
 
 # this is from /LinearAlgebra/src/diagonal.jl, official way to print the dots:
-function Base.replace_in_print_matrix(x::OneHotLike, i::Integer, j::Integer, s::AbstractString)
-  x[i,j] ? s : Base.replace_with_centered_mark(s)
+function Base.replace_in_print_matrix(x::OneHotArray, i::Integer, j::Integer, s::AbstractString)
+  x[i,j] > 0 ? s : Base.replace_with_centered_mark(s)
 end
 
 # copy CuArray versions back before trying to print them:
 for fun in (:show, :print_array)  # print_array is used by 3-arg show
   @eval begin
-    Base.$fun(io::IO, X::OneHotArray{T,N,M,L, <:AbstractGPUArray}) where {T, N, M,L} = 
+    Base.$fun(io::IO, X::OneHotArray{T,N,M,L, <:AbstractGPUArray}) where {T,N,M,L} = 
       Base.$fun(io, adapt(Array, X))
-    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotArray{T,N,M,L,<:AbstractGPUArray}}) where {T, N} = 
+    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotArray{T,N,M,L,<:AbstractGPUArray}}) where {T,N,M,L} = 
       Base.$fun(io, adapt(Array, X))
   end
 end
@@ -115,7 +114,6 @@ Base.argmax(x::OneHotArray; dims = Colon()) =
     OneHotMatrix(indices, L)
 
 A one-hot matrix (with `L` labels) typically constructed using [`onehotbatch`](@ref).
-Stored efficiently as a vector of indices with type `I` and eltype `T`.
 """
-const OneHotMatrix{T, I} = OneHotArray{T, 1, 2, I}
-OneHotMatrix(indices, L) = OneHotArray{T,2,1,L,1}([OneHotVector{T,L}(index) for index in indices])
+const OneHotMatrix{T, L} = OneHotArray{T, 2,1,L,1}
+OneHotMatrix(indices, L) = OneHotArray(1, [OneHotVector(index,L) for index in indices])
