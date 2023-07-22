@@ -31,13 +31,13 @@ julia> hcat(αβγ...)  # preserves sparsity
 function onehot(x, labels)
   i = _findval(x, labels)
   isnothing(i) && error("Value $x is not in labels")
-  OneHotVector{UInt32}(i, length(labels))
+  OneHotVector(i, length(labels))
 end
 
 function onehot(x, labels, default)
   i = _findval(x, labels)
   isnothing(i) && return onehot(default, labels)
-  OneHotVector{UInt32}(i, length(labels))
+  OneHotVector(i, length(labels))
 end
 
 _findval(val, labels) = findfirst(isequal(val), labels)
@@ -90,14 +90,16 @@ function _onehotbatch(data, labels)
       isnothing(_findval(x, labels)) && error("Value $x not found in labels")
     end
   end
-  return OneHotArray(indices, length(labels))
+  L = length(labels)
+  return OneHotArray(1, (index -> OneHotVector(Int32, index, L)).(indices))
 end
 
 function _onehotbatch(data, labels, default)
   default_index = _findval(default, labels)
   isnothing(default_index) && error("Default value $default is not in labels")
   indices = UInt32[something(_findval(i, labels), default_index) for i in data]
-  return OneHotArray(indices, length(labels))
+  L = length(labels)
+  return OneHotArray(1, (index -> OneHotVector(index, L)).(indices))
 end
 
 function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
@@ -106,7 +108,8 @@ function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<
   hi > last(labels) && error("Value $hi not found in labels")
   offset = 1 - first(labels)
   indices = UInt32.(data .+ offset)
-  return OneHotArray(indices, length(labels))
+  L = length(labels)
+  return OneHotArray(1, (index -> OneHotVector(index, L)).(indices))
 end
 # That bounds check with extrema synchronises on GPU, much slower than rest of the function,
 # hence add a special method, with a less helpful error message:
@@ -117,7 +120,8 @@ function onehotbatch(data::AbstractGPUArray{<:Integer}, labels::AbstractUnitRang
     checkbounds(labels, i)
     i
   end
-  return OneHotArray(indices, length(labels))
+  L = length(labels)
+  return OneHotArray(1, (index -> OneHotVector(index, L)).(indices))
 end
 
 """
@@ -165,14 +169,7 @@ function onecold(y::AbstractArray, labels = 1:size(y, 1))
 end
 
 _fast_argmax(x::AbstractArray) = dropdims(argmax(x; dims = 1); dims = 1)
-_fast_argmax(x::OneHotArray) = _indices(x)
-function _fast_argmax(x::OneHotLike)
-  if _isonehot(x)
-    return _indices(x)
-  else
-    return _fast_argmax(convert(_onehot_bool_type(x), x))
-  end
-end
+_fast_argmax(x::Union{OneHotVector, OneHotArray}) = argmax(x)
 
 ChainRulesCore.@non_differentiable onehot(::Any...)
 ChainRulesCore.@non_differentiable onehotbatch(::Any...)
