@@ -104,6 +104,15 @@ end
 
 # Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
 
+function Base.cat(xs::OneHotArray{T,N,M,L,A}...; dims) where {T,N,M,L,A}
+  if dims != A
+      onehotvectors_dim = dims < A ? dims : dims - 1
+      OneHotArray(A, cat((x.onehotvectors for x in xs)...; dims=onehotvectors_dim))
+  else
+    invoke(cat, AbstractArray, xs...; dims=dims)
+  end
+end
+
 Base.argmax(x::OneHotArray; dims = Colon()) =
   dims == onehotaxis(x) ?
     argmax.(x.onehotvectors) :
