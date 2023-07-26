@@ -48,7 +48,7 @@ end
 _findval(val, labels::Tuple{}, i::Integer) = nothing
 
 """
-    onehotbatch(xs, labels, [default]; dims::Integer=1)
+    onehotbatch(xs, labels, [default]; dims::Val{D}=Val{1})
 
 Returns a [`OneHotMatrix`](@ref) where `k`th column of the matrix is [`onehot(xs[k], labels)`](@ref onehot).
 This is a sparse matrix, which stores just a `Vector{UInt32}` containing the indices of the
@@ -98,17 +98,42 @@ julia> reshape(1:15, 3, 5) * oh  # this matrix multiplication is done efficientl
 ```
 """
 
-onehotbatch(data::String, labels, default...; dims::Integer=1) = onehotbatch(collect(data), labels, default...; dims=dims)
-onehotbatch(data::AbstractRange, labels, default...; dims::Integer=1) = onehotbatch(collect(data), labels, default...; dims=dims)
-function onehotbatch(data::AbstractArray, labels, default...; dims::Integer=1)
+onehotbatch(data::String, labels, default...; dims::Val{D} = Val(1)) where D = onehotbatch(collect(data), labels, default...; dims=dims)
+onehotbatch(data::AbstractRange, labels, default...; dims::Val{D} = Val(1)) where D = onehotbatch(collect(data), labels, default...; dims=dims)
+function onehotbatch(data::AbstractArray{<:Any, N}, labels, default...; dims::Val{D}= Val(1)) where {N,D}
   out = _onehotbatch(data, length(labels) < 32 ? Tuple(labels) : labels, default...)
-  if dims==1
+  if D==1
     out
   else
-    perm = ntuple(d -> d==dims ? 1 : (d==1 ? dims : d), length(size(data))+1)
-    PermutedDimsArray(out, perm)
+    perm = Tuple(ntuple(d -> d==D ? 1 : (d==1 ? D : d), N+1))
+    # need to use obtuse PermutedDimsArray constructor in order to stabilise permuation types
+    iperm = invperm(perm)
+    PermutedDimsArray{eltype(out),N+1,(perm...,),(iperm...,),typeof(out)}(out)
   end
 end
+
+function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
+  lo, hi = extrema(data)
+  lo < first(labels) && error("Value $lo not found in labels")
+  hi > last(labels) && error("Value $hi not found in labels")
+  offset = 1 - first(labels)
+  indices = UInt32.(data .+ offset)
+  return OneHotArray(indices, length(labels))
+end
+onehotbatch(data::AbstractRange{<:Integer}, labels::AbstractUnitRange{<:Integer}) = onehotbatch(collect(data), labels)
+
+# That bounds check with extrema synchronises on GPU, much slower than rest of the function,
+# hence add a special method, with a less helpful error message:
+function onehotbatch(data::AbstractGPUArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
+  offset = 1 - first(labels)
+  indices = map(data) do datum
+    i = UInt32(datum + offset)
+    checkbounds(labels, i)
+    i
+  end
+  return OneHotArray(indices, length(labels))
+end
+
 
 function _onehotbatch(data, labels)
   indices = UInt32[something(_findval(i, labels), 0) for i in data]
@@ -124,26 +149,6 @@ function _onehotbatch(data, labels, default)
   default_index = _findval(default, labels)
   isnothing(default_index) && error("Default value $default is not in labels")
   indices = UInt32[something(_findval(i, labels), default_index) for i in data]
-  return OneHotArray(indices, length(labels))
-end
-
-function onehotbatch(data::AbstractArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
-  lo, hi = extrema(data)
-  lo < first(labels) && error("Value $lo not found in labels")
-  hi > last(labels) && error("Value $hi not found in labels")
-  offset = 1 - first(labels)
-  indices = UInt32.(data .+ offset)
-  return OneHotArray(indices, length(labels))
-end
-# That bounds check with extrema synchronises on GPU, much slower than rest of the function,
-# hence add a special method, with a less helpful error message:
-function onehotbatch(data::AbstractGPUArray{<:Integer}, labels::AbstractUnitRange{<:Integer})
-  offset = 1 - first(labels)
-  indices = map(data) do datum
-    i = UInt32(datum + offset)
-    checkbounds(labels, i)
-    i
-  end
   return OneHotArray(indices, length(labels))
 end
 
