@@ -76,25 +76,18 @@ julia> oh = onehotbatch("abracadabra", 'a':'e', 'e')
  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅
  ⋅  ⋅  1  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  1  ⋅
 
- julia> oh = onehotbatch("abracadabra", 'a':'e', 'e'; dims=2)
-5×11 OneHotMatrix(::Vector{UInt32}) with eltype Bool:
- 1  ⋅  ⋅  ⋅  ⋅
- ⋅  1  ⋅  ⋅  ⋅
- ⋅  ⋅  ⋅  ⋅  1
- 1  ⋅  ⋅  ⋅  ⋅
- ⋅  ⋅  1  ⋅  ⋅
- 1  ⋅  ⋅  ⋅  ⋅
- ⋅  ⋅  ⋅  1  ⋅
- 1  ⋅  ⋅  ⋅  ⋅
- ⋅  1  ⋅  ⋅  ⋅
- ⋅  ⋅  ⋅  ⋅  1
- 1  ⋅  ⋅  ⋅  ⋅
-
 julia> reshape(1:15, 3, 5) * oh  # this matrix multiplication is done efficiently
 3×11 Matrix{Int64}:
  1  4  13  1  7  1  10  1  4  13  1
  2  5  14  2  8  2  11  2  5  14  2
  3  6  15  3  9  3  12  3  6  15  3
+
+# One hot vectors on the second axis
+julia> onehotbatch([0, 0, 7], 0:9; dims=Val(2)) 
+3×10 PermutedDimsArray(OneHotMatrix(::Vector{UInt32}), (2, 1)) with eltype Bool:
+ 1  0  0  0  0  0  0  0  0  0
+ 1  0  0  0  0  0  0  0  0  0
+ 0  0  0  0  0  0  0  1  0  0
 ```
 """
 
