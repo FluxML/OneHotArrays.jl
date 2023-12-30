@@ -143,11 +143,9 @@ end
 Adapt.adapt_structure(T, x::OneHotArray) = OneHotArray(adapt(T, _indices(x)), x.nlabels)
 
 function Base.BroadcastStyle(::Type{<:OneHotArray{<:Any, <:Any, var"N+1", T}}) where {var"N+1", T <: AbstractGPUArray}
-  # We want CuArrayStyle{N+1}(). There's an AbstractGPUArrayStyle but it doesn't do what we need. 
+  # We want CuArrayStyle{N+1}(). There's an AbstractGPUArrayStyle but it doesn't do what we need.
   S = Base.BroadcastStyle(T)
-  # S has dim N not N+1. The following hack to fix it relies on the arraystyle having N as its first type parameter, which
-  # isn't guaranteed, but there are not so many GPU broadcasting styles in the wild. (Far fewer than there are array wrappers.)
-  (typeof(S).name.wrapper){var"N+1"}()
+  typeof(S)(Val{var"N+1"}())
 end
 
 Base.map(f, x::OneHotLike) = Base.broadcast(f, x)
