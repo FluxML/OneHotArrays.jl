@@ -12,7 +12,7 @@ NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 
 [compat]
 Adapt = "3.0, 4"
-CUDA = "4"
+CUDA = "4, 5"
 ChainRulesCore = "1.13"
 Compat = "4.2"
 GPUArraysCore = "0.1.0"
