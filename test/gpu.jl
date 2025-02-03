@@ -28,6 +28,9 @@ end
   else
     @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
   end
+
+  # some specialized implementations call only mul! and not *, so we must ensure this works
+  @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) isa CuArray
 end
 
 @testset "onehotbatch(::CuArray, ::UnitRange)" begin

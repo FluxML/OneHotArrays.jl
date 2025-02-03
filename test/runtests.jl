@@ -1,5 +1,5 @@
 using OneHotArrays
-using Test
+using Test, LinearAlgebra
 using Compat: stack
 
 @testset "OneHotArray" begin

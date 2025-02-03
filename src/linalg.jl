@@ -33,3 +33,12 @@ for wrapper in [:Adjoint, :Transpose]
     end
   end
 end
+
+function LinearAlgebra.mul!(Y::AbstractArray, A::AbstractMatrix, B::OneHotLike)
+  _isonehot(B) || return invoke(mul!, Tuple{AbstractArray,AbstractMatrix,AbstractMatrix}, Y, A, B)
+  size(A,2) == size(B,1) || throw(DimensionMismatch("Matrix column must correspond with the OneHot Size $(size(A,2)) ≠ $(size(B,1))")
+)
+  # matmul sometimes wraps in ReshapedArray, taking parent is a simple way to handle that case
+  copyto!(Y, view(A, :, onecold(parent(B))))
+end
+
