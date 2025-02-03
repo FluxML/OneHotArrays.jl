@@ -26,7 +26,7 @@ end
   if VERSION >= v"1.9" && CUDA.functional()
     @test gradient(A -> sum(A * y), gA)[1] isa CuArray 
   else
-    @test_broken gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
+    @test gradient(A -> sum(A * y), gA)[1] isa CuArray  # fails with JLArray, bug in Zygote?
   end
 
   # some specialized implementations call only mul! and not *, so we must ensure this works
