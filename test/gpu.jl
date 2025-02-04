@@ -30,7 +30,12 @@ end
   end
 
   # some specialized implementations call only mul! and not *, so we must ensure this works
-  @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) isa CuArray
+  @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) ≈ gA*y
+
+  #TODO: the below fails due to method ambiguity and GPU scalar indexing
+  y = reshape(y, 3, 2)
+  gA = rand(2, 3) |> cu
+  @test_broken LinearAlgebra.mul!(similar(gA, 2, 2), gA, y) ≈ gA*y
 end
 
 @testset "onehotbatch(::CuArray, ::UnitRange)" begin
