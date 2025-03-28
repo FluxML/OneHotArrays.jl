@@ -36,9 +36,18 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, A::AbstractMatrix, B::OneHotLike)
   _isonehot(B) || return invoke(mul!, Tuple{AbstractArray,AbstractMatrix,AbstractMatrix}, Y, A, B)
-  size(A,2) == size(B,1) || throw(DimensionMismatch("Matrix column must correspond with the OneHot Size $(size(A,2)) ≠ $(size(B,1))")
-)
+  if size(A,2) ≠ size(B,1)
+    throw(DimensionMismatch("Matrix column must correspond with the OneHot Size $(size(A,2)) ≠ $(size(B,1))"))
+  end
+  if !(size(Y,1) == size(A,1) && size(Y,2) == size(B,2))
+    throw(DimensionMismatch("Invalid output matrix size for multiplication of matrix sizes $(size(A)) and $(size(B))"))
+  end
   # matmul sometimes wraps in ReshapedArray, taking parent is a simple way to handle that case
-  copyto!(Y, view(A, :, onecold(parent(B))))
+  idxs = onecold(parent(B))
+  if idxs isa Integer  # occurs whe B is AbstractVector
+    copyto!(Y, view(A, :, idxs))
+  else
+    NNlib.gather!(Y, A, idxs)
+  end
 end
 

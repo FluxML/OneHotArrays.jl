@@ -29,6 +29,12 @@ end
 
   # some specialized implementations call only mul! and not *, so we must ensure this works
   @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) ≈ gA*y
+  @test LinearAlgebra.mul!(similar(gA, 3, 1), gA, onehot(1, 1:2)) ≈ gA*onehot(1, 1:2)
+
+  @test_throws DimensionMismatch LinearAlgebra.mul!(similar(gA, 3, 4), gA, y)
+
+  gB = rand(3, 3) |> cu
+  @test_throws DimensionMismatch LinearAlgebra.mul!(similar(gB, 3, 3), gB, y)
 
   #TODO: the below fails due to method ambiguity and GPU scalar indexing
   y = reshape(y, 3, 2)
