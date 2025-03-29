@@ -12,6 +12,17 @@
   @test transpose(X) * b2 == transpose(X) * Array(b2)
   @test transpose(v) * b2 == transpose(v) * Array(b2)
   @test_throws DimensionMismatch A*b2
+
+  # in-place with mul!
+  c1 = fill(NaN, 3)
+  @test mul!(c1, A, b1) == A * Array(b1)
+  @test c1 == A * Array(b1)
+  @test mul!(c1, transpose(A), b1) == transpose(A) * Array(b1)
+  @test mul!(zeros(3,1), A, b1) == reshape(A * b1, 3,1)
+  @test mul!([NaN], transpose(v), b2) == mul!([NaN], transpose(v), Array(b2))
+  
+  @test_throws DimensionMismatch mul!(zeros(5), A, b1)
+  @test_throws DimensionMismatch mul!(c1, X, b1)
 end
 
 @testset "AbstractMatrix-OneHotMatrix multiplication" begin
@@ -41,4 +52,18 @@ end
   @test_throws DimensionMismatch A*b2'
   @test_throws DimensionMismatch A*b6'
   @test_throws DimensionMismatch A*b7
+
+  # in-place with mul!
+  c1 = fill(NaN, 3, 4)
+  @test mul!(c1, A, b1) == A * b1
+  @test c1 == A * b1
+  
+  c4 = fill(NaN, 3, 6)
+  @test mul!(c4, A, b4) == A * b4
+  @test mul!(c4, A', b4) == A' * b4
+  
+  @test_throws DimensionMismatch mul!(c1, A, b2)
+  @test_throws DimensionMismatch mul!(c1, A, b4)
+  @test_throws DimensionMismatch mul!(c4, A, b1)
+  @test_throws DimensionMismatch mul!(zeros(10, 3), A, b1)
 end
