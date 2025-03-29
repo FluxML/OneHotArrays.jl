@@ -33,8 +33,10 @@ end
   b2 = OneHotMatrix([2, 4, 1, 3], 5)
   b3 = OneHotMatrix([1, 1, 2], 4)
   b4 = reshape(OneHotMatrix([1 2 3; 2 2 1], 3), 3, :)
+  @test OneHotArrays._isonehot(b4)
   b5 = reshape(b4, 6, :)
   b6 = reshape(OneHotMatrix([1 2 2; 2 2 1], 2), 3, :)
+  @test !OneHotArrays._isonehot(b6)
   b7 = reshape(OneHotMatrix([1 2 3; 1 2 3], 3), 6, :)
 
   @test A * b1 == A[:,[1, 1, 2, 2]]
@@ -59,8 +61,11 @@ end
   @test c1 == A * b1
   
   c4 = fill(NaN, 3, 6)
-  @test mul!(c4, A, b4) == A * b4
+  @test mul!(c4, A, b4) == A * b4  # b4 is reshaped but still one-hot
   @test mul!(c4, A', b4) == A' * b4
+  c6 = fill(NaN, 3, 4)
+  @test mul!(c6, A, b6) == A * b6  # b4 is reshaped and not one-hot
+  @test mul!(c6, A', b6) == A' * b6
   
   @test_throws DimensionMismatch mul!(c1, A, b2)
   @test_throws DimensionMismatch mul!(c1, A, b4)
