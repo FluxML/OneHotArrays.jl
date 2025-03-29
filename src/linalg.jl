@@ -42,8 +42,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, A::AbstractMatrix, B::OneHotLik
   if !(size(Y,1) == size(A,1) && size(Y,2) == size(B,2))
     throw(DimensionMismatch("Invalid output matrix size for multiplication of matrix sizes $(size(A)) and $(size(B))"))
   end
-  # matmul sometimes wraps in ReshapedArray, taking parent is a simple way to handle that case
-  idxs = onecold(parent(B))
+  idxs =  _indices(B)
   if idxs isa Integer  # occurs whe B is AbstractVector
     copyto!(Y, view(A, :, idxs))
   else
