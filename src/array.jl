@@ -92,7 +92,11 @@ function Base.copyto!(dst::Array{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AnyGPUAr
   if Bool(v)
     @inbounds x.indices[I...] = i
   elseif x.indices[I...] == i
-    @inbounds x.indices[I...] = 0
+    # writing 0, at position of the 1 => move the 1 down if possible
+    i == x.nlabels && throw(ArgumentError("`setindex!` here would leave the `OneHotArray` without a hot one (in this column)"))
+    @inbounds x.indices[I...] = i+1
+  else
+    # writing 0, where it's already 0 => do nothing
   end
   x
 end
