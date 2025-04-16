@@ -86,6 +86,15 @@ function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,<:Any,N,<:
 end
 function Base.copyto!(dst::Array{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AnyGPUArray}) where {T,N}
   copyto!(dst, adapt(Array, src))
+
+@inline function Base.setindex!(x::OneHotArray{<:Any, N}, v, i::Integer, I::Vararg{Integer, N}) where N
+  @boundscheck checkbounds(x, i, I...)
+  if Bool(v)
+    @inbounds x.indices[I...] = i
+  elseif x.indices[I...] == i
+    @inbounds x.indices[I...] = 0
+  end
+  x
 end
 
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
@@ -104,9 +113,9 @@ end
 # copy CuArray versions back before trying to print them:
 for fun in (:show, :print_array)  # print_array is used by 3-arg show
   @eval begin
-    Base.$fun(io::IO, X::OneHotLike{T, N, var"N+1", <:AbstractGPUArray}) where {T, N, var"N+1"} = 
+    Base.$fun(io::IO, X::OneHotLike{T, N, var"N+1", <:AbstractGPUArray}) where {T, N, var"N+1"} =
       Base.$fun(io, adapt(Array, X))
-    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, N, <:Any, <:AbstractGPUArray}}) where {T, N} = 
+    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, N, <:Any, <:AbstractGPUArray}}) where {T, N} =
       Base.$fun(io, adapt(Array, X))
   end
 end
