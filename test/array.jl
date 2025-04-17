@@ -52,12 +52,22 @@ end
   @test hcat(ov, ov) isa OneHotMatrix
   @test vcat(ov, ov) == vcat(collect(ov), collect(ov))
   @test cat(ov, ov; dims = 3) == OneHotArray(cat(ov.indices, ov.indices; dims = 2), 10)
+  @test cat(ov, ov; dims = 3) isa OneHotArray
+  @test cat(ov, ov; dims = Val(3)) == OneHotArray(cat(ov.indices, ov.indices; dims = 2), 10)
+  @test cat(ov, ov; dims = Val(3)) isa OneHotArray
+  @test cat(ov, ov; dims = (1, 2)) == cat(collect(ov), collect(ov); dims = (1, 2))
 
   # matrix cat
   @test hcat(om, om) == OneHotMatrix(vcat(om.indices, om.indices), 10)
   @test hcat(om, om) isa OneHotMatrix
-  @test vcat(om, om) == vcat(collect(om), collect(om))
+  @test vcat(om, om) == vcat(collect(om), collect(om))  # not one-hot!
+  @test cat(om, om; dims = 1) == vcat(collect(om), collect(om))
+  @test cat(om, om; dims = Val(1)) == vcat(collect(om), collect(om))
   @test cat(om, om; dims = 3) == OneHotArray(cat(om.indices, om.indices; dims = 2), 10)
+  @test cat(om, om; dims = 3) isa OneHotArray
+  @test cat(om, om; dims = Val(3)) == OneHotArray(cat(om.indices, om.indices; dims = 2), 10)
+  @test cat(om, om; dims = Val(3)) isa OneHotArray
+  @test cat(om, om; dims = (1, 2)) == cat(collect(om), collect(om); dims = (1, 2))
 
   # array cat
   @test cat(oa, oa; dims = 3) == OneHotArray(cat(oa.indices, oa.indices; dims = 2), 10)
@@ -88,6 +98,8 @@ end
   @testset "w/ cat" begin
     r = reshape(oa, 10, :)
     @test hcat(r, r) isa OneHotArray
+    @test cat(r, r; dims = 2) isa OneHotArray
+    @test cat(r, r; dims = Val(2)) isa OneHotArray
     @test vcat(r, r) isa Array{Bool}
   end
 
