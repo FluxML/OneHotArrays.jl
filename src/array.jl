@@ -147,6 +147,13 @@ function _stack(::Colon, xs::AbstractArray{<:OneHotArray})
   OneHotArray(Compat.stack(_indices, xs), n)
 end
 
+Base.reduce(::typeof(hcat), xs::AbstractVector{<:OneHotArray{<:Any, 0, 1}}) = Compat.stack(xs)
+function Base.reduce(::typeof(hcat), xs::AbstractVector{<:OneHotMatrix})
+  n = _nlabels(first(xs))
+  all(x -> _nlabels(x)==n, xs) || throw(DimensionMismatch("The number of labels are not the same for all one-hot arrays."))
+  OneHotArray(reduce(vcat, _indices.(xs)), n)
+end
+
 Adapt.adapt_structure(T, x::OneHotArray) = OneHotArray(adapt(T, _indices(x)), x.nlabels)
 
 function Base.BroadcastStyle(::Type{<:OneHotArray{<:Any, <:Any, var"N+1", T}}) where {var"N+1", T <: AbstractGPUArray}

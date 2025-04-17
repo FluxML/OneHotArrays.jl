@@ -81,9 +81,19 @@ end
   @test stack([om, om]) isa OneHotArray
   @test stack([oa, oa, oa, oa]) isa OneHotArray
 
+  # reduce(hcat)
+  @test reduce(hcat, [ov, ov]) == hcat(ov, ov)
+  @test reduce(hcat, [ov, ov]) isa OneHotMatrix
+  @test reduce(hcat, [onehotbatch(1, 1:3), onehotbatch(1, 1:3)]) == [1 1; 0 0; 0 0]
+  @test reduce(hcat, [onehotbatch(1, 1:3), onehotbatch(1, 1:3)]) isa OneHotMatrix
+  @test reduce(hcat, [om, om]) == hcat(om, om)
+  @test reduce(hcat, [om, om]) isa OneHotMatrix
+
   # proper error handling of inconsistent sizes
   @test_throws DimensionMismatch hcat(ov, ov2)
   @test_throws DimensionMismatch hcat(om, om2)
+  @test_throws DimensionMismatch stack([om, om2])
+  @test_throws DimensionMismatch reduce(hcat, [om, om2])
 end
 
 @testset "Base.reshape" begin
