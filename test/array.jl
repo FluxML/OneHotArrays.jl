@@ -52,12 +52,22 @@ end
   @test hcat(ov, ov) isa OneHotMatrix
   @test vcat(ov, ov) == vcat(collect(ov), collect(ov))
   @test cat(ov, ov; dims = 3) == OneHotArray(cat(ov.indices, ov.indices; dims = 2), 10)
+  @test cat(ov, ov; dims = 3) isa OneHotArray
+  @test cat(ov, ov; dims = Val(3)) == OneHotArray(cat(ov.indices, ov.indices; dims = 2), 10)
+  @test cat(ov, ov; dims = Val(3)) isa OneHotArray
+  @test cat(ov, ov; dims = (1, 2)) == cat(collect(ov), collect(ov); dims = (1, 2))
 
   # matrix cat
   @test hcat(om, om) == OneHotMatrix(vcat(om.indices, om.indices), 10)
   @test hcat(om, om) isa OneHotMatrix
-  @test vcat(om, om) == vcat(collect(om), collect(om))
+  @test vcat(om, om) == vcat(collect(om), collect(om))  # not one-hot!
+  @test cat(om, om; dims = 1) == vcat(collect(om), collect(om))
+  @test cat(om, om; dims = Val(1)) == vcat(collect(om), collect(om))
   @test cat(om, om; dims = 3) == OneHotArray(cat(om.indices, om.indices; dims = 2), 10)
+  @test cat(om, om; dims = 3) isa OneHotArray
+  @test cat(om, om; dims = Val(3)) == OneHotArray(cat(om.indices, om.indices; dims = 2), 10)
+  @test cat(om, om; dims = Val(3)) isa OneHotArray
+  @test cat(om, om; dims = (1, 2)) == cat(collect(om), collect(om); dims = (1, 2))
 
   # array cat
   @test cat(oa, oa; dims = 3) == OneHotArray(cat(oa.indices, oa.indices; dims = 2), 10)
@@ -71,9 +81,19 @@ end
   @test stack([om, om]) isa OneHotArray
   @test stack([oa, oa, oa, oa]) isa OneHotArray
 
+  # reduce(hcat)
+  @test reduce(hcat, [ov, ov]) == hcat(ov, ov)
+  @test reduce(hcat, [ov, ov]) isa OneHotMatrix
+  @test reduce(hcat, [onehotbatch(1, 1:3), onehotbatch(1, 1:3)]) == [1 1; 0 0; 0 0]
+  @test reduce(hcat, [onehotbatch(1, 1:3), onehotbatch(1, 1:3)]) isa OneHotMatrix
+  @test reduce(hcat, [om, om]) == hcat(om, om)
+  @test reduce(hcat, [om, om]) isa OneHotMatrix
+
   # proper error handling of inconsistent sizes
   @test_throws DimensionMismatch hcat(ov, ov2)
   @test_throws DimensionMismatch hcat(om, om2)
+  @test_throws DimensionMismatch stack([om, om2])
+  @test_throws DimensionMismatch reduce(hcat, [om, om2])
 end
 
 @testset "Base.reshape" begin
@@ -88,6 +108,8 @@ end
   @testset "w/ cat" begin
     r = reshape(oa, 10, :)
     @test hcat(r, r) isa OneHotArray
+    @test cat(r, r; dims = 2) isa OneHotArray
+    @test cat(r, r; dims = Val(2)) isa OneHotArray
     @test vcat(r, r) isa Array{Bool}
   end
 

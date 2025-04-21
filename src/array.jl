@@ -109,25 +109,32 @@ _onehot_bool_type(::OneHotLike{<:Any, <:Any, var"N+1", <:AbstractGPUArray}) wher
 _notall_onehot(x::OneHotArray, xs::OneHotArray...) = false
 _notall_onehot(x::OneHotLike, xs::OneHotLike...) = any(x -> !_isonehot(x), (x, xs...))
 
-function Base.cat(x::OneHotLike{<:Any, <:Any, N}, xs::OneHotLike...; dims::Int) where N
+function Base._cat(dims::Int, x::OneHotLike{<:Any, <:Any, N}, xs::OneHotLike...) where N
   if isone(dims) || _notall_onehot(x, xs...)
-    return cat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...; dims = dims)
+    # return cat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...; dims = dims)
+    return invoke(Base._cat, Tuple{Int, Vararg{AbstractArray{Bool}}}, dims, x, xs...)
   else
     L = _nlabels(x, xs...)
-
     return OneHotArray(cat(_indices(x), _indices.(xs)...; dims = dims - 1), L)
   end
 end
+function Base._cat(::Val{dims}, x::OneHotLike{<:Any, <:Any, N}, xs::OneHotLike...) where {N,dims}
+  if !(dims isa Integer) || isone(dims) || _notall_onehot(x, xs...)
+    # return cat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...; dims = dims)
+    return invoke(Base._cat, Tuple{Val{dims}, Vararg{AbstractArray{Bool}}}, Val(dims), x, xs...)
+  else
+    L = _nlabels(x, xs...)
+    return OneHotArray(cat(_indices(x), _indices.(xs)...; dims = Val(dims - 1)), L)
+  end
+end
 
-Base.hcat(x::OneHotLike, xs::OneHotLike...) = cat(x, xs...; dims = 2)
-Base.vcat(x::OneHotLike, xs::OneHotLike...) =
-  vcat(map(x -> convert(_onehot_bool_type(x), x), (x, xs...))...)
+Base.hcat(x::OneHotLike, xs::OneHotLike...) = cat(x, xs...; dims = Val(2))
 
 # optimized concatenation for matrices and vectors of same parameters
 Base.hcat(x::OneHotMatrix, xs::OneHotMatrix...) =
-  OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), _nlabels(x, xs...))
+  OneHotMatrix(vcat(_indices(x), _indices.(xs)...), _nlabels(x, xs...))
 Base.hcat(x::OneHotVector, xs::OneHotVector...) =
-  OneHotMatrix(reduce(vcat, _indices.(xs); init = _indices(x)), _nlabels(x, xs...))
+  OneHotMatrix(UInt32[_indices(x), _indices.(xs)...], _nlabels(x, xs...))
 
 if isdefined(Base, :stack)
   import Base: _stack
@@ -138,6 +145,13 @@ function _stack(::Colon, xs::AbstractArray{<:OneHotArray})
   n = _nlabels(first(xs))
   all(x -> _nlabels(x)==n, xs) || throw(DimensionMismatch("The number of labels are not the same for all one-hot arrays."))
   OneHotArray(Compat.stack(_indices, xs), n)
+end
+
+Base.reduce(::typeof(hcat), xs::AbstractVector{<:OneHotArray{<:Any, 0, 1}}) = Compat.stack(xs)
+function Base.reduce(::typeof(hcat), xs::AbstractVector{<:OneHotMatrix})
+  n = _nlabels(first(xs))
+  all(x -> _nlabels(x)==n, xs) || throw(DimensionMismatch("The number of labels are not the same for all one-hot arrays."))
+  OneHotArray(reduce(vcat, _indices.(xs)), n)
 end
 
 Adapt.adapt_structure(T, x::OneHotArray) = OneHotArray(adapt(T, _indices(x)), x.nlabels)
