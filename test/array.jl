@@ -38,6 +38,9 @@ end
   # linear indexing
   @test om[11] == om[1, 2]
   @test oa[52] == oa[2, 1, 2]
+  @test copyto!(rand(50,1), om) == reshape(om,:,1)  # hits invoke path
+  @test copyto!(rand(51,1), om)[1:50] == vec(om)
+  @test_throws BoundsError copyto!(rand(49,1), om)
 
   # bounds checks
   @test_throws BoundsError ov[0]

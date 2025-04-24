@@ -80,7 +80,7 @@ Base.similar(x::OneHotArray{<:Any,<:Any,<:Any,<:AbstractArray}, ::Type{T}, size:
   similar(x.indices, T, size)
 
 function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AbstractArray}) where {T,N}
-  size(dst) == size(src) || return invoke(copyto!, Tuple{typeof(dst), AbstractArray{Bool,N}})
+  size(dst) == size(src) || return invoke(copyto!, Tuple{typeof(dst), AbstractArray{Bool,N}}, dst, src)
   dst .= reshape(src.indices, 1, size(src.indices)...) .== (1:src.nlabels)
   return dst
 end
