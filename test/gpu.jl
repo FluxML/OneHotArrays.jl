@@ -1,5 +1,6 @@
 
 # Tests from Flux, probably not the optimal testset organisation!
+# (When CUDA is not available, these are run with JLArrays)
 
 @testset "CUDA" begin
   x = randn(5, 5)
@@ -16,6 +17,24 @@
   xs = rand(5, 5)
   ys = onehotbatch(1:5,1:5)
   @test collect(cu(xs) .+ cu(ys)) ≈ collect(xs .+ ys)
+end
+
+@testset "gpu indexing" begin
+  x = onehotbatch([1, 2, 3, 2], 1:3)
+  cx = cu(x)
+
+  # These worked on OneHotArrays v0.2.7
+  @test cx[:, 1:2] isa OneHotMatrix
+  @test cx[:, 1:2].indices isa CuArray
+
+  @test @allowscalar cx[:,1] isa OneHotVector  # needs @allowscalar on v0.2.7
+  @test @allowscalar cx[:,1].indices isa Integer
+  @test collect(@allowscalar cx[:,end]) == [0,1,0]
+
+  # These were broken on OneHotArrays v0.2.7
+  @test @allowscalar cx[2,2] == x[2,2]
+  @test_broken collect(cx) == collect(x)
+  @test_broken convert(AbstractArray{Float32}, cx) isa CuArray{Float32}
 end
 
 @testset "onehot gpu" begin

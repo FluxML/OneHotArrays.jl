@@ -64,15 +64,7 @@ Base.size(x::OneHotArray) = (x.nlabels, size(x.indices)...)
 
 function Base.getindex(x::OneHotArray{<:Any, N}, i::Int, I::Vararg{Int, N}) where N
   @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
-  return x.indices[I...] .== i
-end
-# the method above is faster on the CPU but will scalar index on the GPU
-# so we define the method below to pass the extra indices directly to GPU array
-function Base.getindex(x::OneHotArray{<:Any, N, <:Any, <:AbstractGPUArray},
-                       i::Int, 
-                       I::Vararg{Any, N}) where N
-  @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
-  return x.indices[I...] .== i
+  return x.indices[I...] == i
 end
 function Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, I::Vararg{Any, N}) where N
   return OneHotArray(x.indices[I...], x.nlabels)
