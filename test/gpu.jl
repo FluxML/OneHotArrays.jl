@@ -38,7 +38,9 @@ end
   # These were broken on OneHotArrays v0.2.7
   @test @allowscalar cx[2,2] == x[2,2]
   @test_broken collect(cx) == collect(x)
-  @test_broken convert(AbstractArray{Float32}, cx) isa CuArray{Float32}
+  @test_broken Matrix(cx) == Matrix(x) == collect(x)
+  @test_broken Array{Float32}(cx) == Array{Float32}(x) == collect(x)
+  @test convert(AbstractArray{Float32}, cx) isa CuArray{Float32}
 end
 
 @testset "onehot gpu" begin

@@ -76,6 +76,18 @@ end
 Base.getindex(x::OneHotArray, ::Colon) = BitVector(reshape(x, :))
 Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, ::Vararg{Colon, N}) where N = x
 
+Base.similar(x::OneHotArray{<:Any,<:Any,<:Any,<:AbstractArray}, ::Type{T}, size::Base.Dims) where T =
+  similar(x.indices, T, size)
+
+function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,Nm1,N,<:AbstractArray}) where {T,N,Nm1}
+  size(dst) == size(src) || return invoke(copyto!, Tuple{typeof(dst), AbstractArray{Bool,N}})
+  # fill!(dst, false)
+  # setindex!.(eachslice(dst; dims=ntuple(d->d+1, Nm1)), true, src.indices)
+  # setindex!.(Ref(dst), true, src.indices, axes(src.indices)...)
+  dst .= reshape(src.indices, 1, size(src.indices)...) .== (1:src.nlabels)  # this works at REPL!
+  return dst
+end
+
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
   print(io, ndims(x) == 1 ? "OneHotVector(" : ndims(x) == 2 ? "OneHotMatrix(" : "OneHotArray(")
   Base.showarg(io, x.indices, false)
