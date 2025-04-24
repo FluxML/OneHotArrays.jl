@@ -79,13 +79,13 @@ Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, ::Vararg{Colon, N}) where N = x
 Base.similar(x::OneHotArray{<:Any,<:Any,<:Any,<:AbstractArray}, ::Type{T}, size::Base.Dims) where T =
   similar(x.indices, T, size)
 
-function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,Nm1,N,<:AbstractArray}) where {T,N,Nm1}
+function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AbstractArray}) where {T,N}
   size(dst) == size(src) || return invoke(copyto!, Tuple{typeof(dst), AbstractArray{Bool,N}})
-  # fill!(dst, false)
-  # setindex!.(eachslice(dst; dims=ntuple(d->d+1, Nm1)), true, src.indices)
-  # setindex!.(Ref(dst), true, src.indices, axes(src.indices)...)
-  dst .= reshape(src.indices, 1, size(src.indices)...) .== (1:src.nlabels)  # this works at REPL!
+  dst .= reshape(src.indices, 1, size(src.indices)...) .== (1:src.nlabels)
   return dst
+end
+function Base.copyto!(dst::Array{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AnyGPUArray}) where {T,N}
+  copyto!(dst, adapt(Array, src))
 end
 
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
