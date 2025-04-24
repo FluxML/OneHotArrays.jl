@@ -66,6 +66,10 @@ function Base.getindex(x::OneHotArray{<:Any, N}, i::Int, I::Vararg{Int, N}) wher
   @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
   return x.indices[I...] == i
 end
+function Base.getindex(x::OneHotArray{<:Any, N}, i::Int, I::Vararg{Any, N}) where N
+  @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
+  return x.indices[I...] .== i
+end
 function Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, I::Vararg{Any, N}) where N
   return OneHotArray(x.indices[I...], x.nlabels)
 end

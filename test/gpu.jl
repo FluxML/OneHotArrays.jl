@@ -27,9 +27,13 @@ end
   @test cx[:, 1:2] isa OneHotMatrix
   @test cx[:, 1:2].indices isa CuArray
 
-  @test @allowscalar cx[:,1] isa OneHotVector  # needs @allowscalar on v0.2.7
+  @test @allowscalar cx[:,1] isa OneHotVector  # column, needs @allowscalar on v0.2.7
   @test @allowscalar cx[:,1].indices isa Integer
   @test collect(@allowscalar cx[:,end]) == [0,1,0]
+
+  @test cx[2,:] isa CuArray{Bool}  # row, is not onehot!
+  @test sum(cx[2,:]) == 2
+  @test collect(cx[2,:]) == x[2,:]
 
   # These were broken on OneHotArrays v0.2.7
   @test @allowscalar cx[2,2] == x[2,2]
@@ -44,7 +48,7 @@ end
   gA = rand(3, 2) |> cu;
 
   #NOTE: this would require something that can copute gradient... we don't have that here?
-  #@test gradient(A -> sum(A * y), gA)[1] isa CuArray 
+  #@test gradient(A -> sum(A * y), gA)[1] isa CuArray
 
   # some specialized implementations call only mul! and not *, so we must ensure this works
   @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) ≈ gA*y
