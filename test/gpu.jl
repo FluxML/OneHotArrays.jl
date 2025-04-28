@@ -1,5 +1,6 @@
 
 # Tests from Flux, probably not the optimal testset organisation!
+# (When CUDA is not available, these are run with JLArrays)
 
 @testset "CUDA" begin
   x = randn(5, 5)
@@ -18,6 +19,31 @@
   @test collect(cu(xs) .+ cu(ys)) ≈ collect(xs .+ ys)
 end
 
+@testset "gpu indexing" begin
+  x = onehotbatch([1, 2, 3, 2], 1:3)
+  cx = cu(x)
+
+  # These worked on OneHotArrays v0.2.7
+  @test cx[:, 1:2] isa OneHotMatrix
+  @test cx[:, 1:2].indices isa CuArray
+
+  @test @allowscalar cx[:,1] isa OneHotVector  # column, needs @allowscalar on v0.2.7
+  @test @allowscalar cx[:,1].indices isa Integer
+  @test collect(@allowscalar cx[:,end]) == [0,1,0]
+
+  @test cx[2,:] isa CuArray{Bool}  # row, is not onehot!
+  @test sum(cx[2,:]) == 2
+  @test collect(cx[2,:]) == x[2,:]
+
+  # These were broken on OneHotArrays v0.2.7
+  @test @allowscalar cx[2,2] == x[2,2]
+  @test collect(cx) == collect(x)
+  @test Matrix(cx) == Matrix(x) == collect(x)
+  @test Array{Float32}(cx) == Array{Float32}(x) == collect(x)
+  @test convert(AbstractArray{Float32}, cx) isa CuArray{Float32}
+  @test collect(convert(AbstractArray{Float32}, cx)) == collect(x)
+end
+
 @testset "onehot gpu" begin
   y = onehotbatch(ones(3), 1:2) |> cu;
   @test (repr("text/plain", y); true)
@@ -25,7 +51,7 @@ end
   gA = rand(3, 2) |> cu;
 
   #NOTE: this would require something that can copute gradient... we don't have that here?
-  #@test gradient(A -> sum(A * y), gA)[1] isa CuArray 
+  #@test gradient(A -> sum(A * y), gA)[1] isa CuArray
 
   # some specialized implementations call only mul! and not *, so we must ensure this works
   @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) ≈ gA*y

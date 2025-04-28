@@ -64,13 +64,9 @@ Base.size(x::OneHotArray) = (x.nlabels, size(x.indices)...)
 
 function Base.getindex(x::OneHotArray{<:Any, N}, i::Int, I::Vararg{Int, N}) where N
   @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
-  return x.indices[I...] .== i
+  return x.indices[I...] == i
 end
-# the method above is faster on the CPU but will scalar index on the GPU
-# so we define the method below to pass the extra indices directly to GPU array
-function Base.getindex(x::OneHotArray{<:Any, N, <:Any, <:AbstractGPUArray},
-                       i::Int, 
-                       I::Vararg{Any, N}) where N
+function Base.getindex(x::OneHotArray{<:Any, N}, i::Int, I::Vararg{Any, N}) where N
   @boundscheck (1 <= i <= x.nlabels) || throw(BoundsError(x, (i, I...)))
   return x.indices[I...] .== i
 end
@@ -79,6 +75,18 @@ function Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, I::Vararg{Any, N}) whe
 end
 Base.getindex(x::OneHotArray, ::Colon) = BitVector(reshape(x, :))
 Base.getindex(x::OneHotArray{<:Any, N}, ::Colon, ::Vararg{Colon, N}) where N = x
+
+Base.similar(x::OneHotArray{<:Any,<:Any,<:Any,<:AbstractArray}, ::Type{T}, size::Base.Dims) where T =
+  similar(x.indices, T, size)
+
+function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AbstractArray}) where {T,N}
+  size(dst) == size(src) || return invoke(copyto!, Tuple{typeof(dst), AbstractArray{Bool,N}}, dst, src)
+  dst .= reshape(src.indices, 1, size(src.indices)...) .== (1:src.nlabels)
+  return dst
+end
+function Base.copyto!(dst::Array{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AnyGPUArray}) where {T,N}
+  copyto!(dst, adapt(Array, src))
+end
 
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
   print(io, ndims(x) == 1 ? "OneHotVector(" : ndims(x) == 2 ? "OneHotMatrix(" : "OneHotArray(")
