@@ -86,6 +86,7 @@ function Base.copyto!(dst::AbstractArray{T,N}, src::OneHotArray{<:Any,<:Any,N,<:
 end
 function Base.copyto!(dst::Array{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AnyGPUArray}) where {T,N}
   copyto!(dst, adapt(Array, src))
+end
 
 @inline function Base.setindex!(x::OneHotArray{<:Any, N}, v, i::Integer, I::Vararg{Integer, N}) where N
   @boundscheck checkbounds(x, i, I...)
