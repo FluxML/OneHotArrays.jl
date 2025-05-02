@@ -64,7 +64,7 @@ end
   x .= 1
   @test x[end, :] == [1, 1, 1]
   x .= y
-  @test x[:, 1] == [0, 0, 0, 0, 1]
+  @test x[:, 3] == [0, 1, 0, 0, 0]
 
   @test_throws ArgumentError y[5,1] = 0  # can't push 1 off the end
   @test sum(y) == 3  # has not been corrupted before error
