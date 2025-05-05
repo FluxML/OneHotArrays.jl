@@ -59,16 +59,36 @@ end
   c1 = fill(NaN, 3, 4)
   @test mul!(c1, A, b1) == A * b1
   @test c1 == A * b1
-  
+
   c4 = fill(NaN, 3, 6)
   @test mul!(c4, A, b4) == A * b4  # b4 is reshaped but still one-hot
   @test mul!(c4, A', b4) == A' * b4
   c6 = fill(NaN, 3, 4)
   @test mul!(c6, A, b6) == A * b6  # b4 is reshaped and not one-hot
   @test mul!(c6, A', b6) == A' * b6
-  
+ 
   @test_throws DimensionMismatch mul!(c1, A, b2)
   @test_throws DimensionMismatch mul!(c1, A, b4)
   @test_throws DimensionMismatch mul!(c4, A, b1)
   @test_throws DimensionMismatch mul!(zeros(10, 3), A, b1)
+
+  # note that we have separate implementations for a couple of mul! for the time being
+
+  d1 = fill(NaN, 3, 4)
+  @test mul!(d1, A, b3') == A * Array(b3')
+  @test mul!(d1, A, transpose(b3)) == A * Array(transpose(b3))
+
+  d2 = fill(NaN, 3, 6)
+  @test mul!(d2, A, b5') == hcat(A[:,[1, 2, 3, 3]], A[:,1]+A[:,2], zeros(Int64, 3))
+  @test mul!(d2, A, transpose(b5)) == hcat(A[:,[1, 2, 3, 3]], A[:,1]+A[:,2], zeros(Int64, 3))
+
+  d3 = fill(NaN, 3, 6)
+  @test mul!(d3, A, b7') == A[:,[1, 2, 3, 1, 2, 3]]
+  @test mul!(d3, A, transpose(b7)) == A[:,[1, 2, 3, 1, 2, 3]]
+
+  d4 = fill(NaN, 4, 4)
+  @test_throws DimensionMismatch mul!(d4, A, b3')
+  @test_throws DimensionMismatch mul!(d4, A, transpose(b3))
+  @test_throws DimensionMismatch mul!(d1, fill(1, (4,4)), b3')
+  @test_throws DimensionMismatch mul!(d1, fill(1, (4,4)), transpose(b3))
 end

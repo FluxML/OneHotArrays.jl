@@ -42,6 +42,14 @@ end
   @test Array{Float32}(cx) == Array{Float32}(x) == collect(x)
   @test convert(AbstractArray{Float32}, cx) isa CuArray{Float32}
   @test collect(convert(AbstractArray{Float32}, cx)) == collect(x)
+
+  A = cu([1 3 5; 2 4 6; 3 6 9])
+  b3_dense = cu(Array(OneHotMatrix([1, 1, 2], 4)))
+  b3 = OneHotMatrix(cu([1, 1, 2]), 4)
+
+  d1 = fill(NaN, 3, 4) |> cu
+  @test mul!(d1, A, b3') == A * b3_dense'
+  @test mul!(d1, A, transpose(b3)) == A * transpose(b3_dense)
 end
 
 @testset "onehot gpu" begin
