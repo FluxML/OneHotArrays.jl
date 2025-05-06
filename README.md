@@ -19,10 +19,11 @@ julia> m = onehotbatch([10, 20, 30, 10, 10], 10:10:40)
  ⋅  ⋅  ⋅  ⋅  ⋅
 
 julia> dump(m)
-OneHotMatrix{UInt32, 4, Vector{UInt32}}
+OneHotMatrix{UInt32, Vector{UInt32}}
   indices: Array{UInt32}((5,)) UInt32[0x00000001, 0x00000002, 0x00000003, 0x00000001, 0x00000001]
+  nlabels: Int64 4
 
 julia> @which rand(100, 4) * m
-*(A::AbstractMatrix, B::Union{OneHotArray{var"#s14", L, 1, var"N+1", I}, Base.ReshapedArray{Bool, var"N+1", <:OneHotArray{var"#s14", L, <:Any, <:Any, I}}} where {var"#s14", var"N+1", I}) where L
-     @ OneHotArrays ~/.julia/dev/OneHotArrays/src/linalg.jl:7
+*(A::AbstractMatrix, B::Union{OneHotArray{var"#s29", 1, var"N+1", I}, Base.ReshapedArray{Bool, var"N+1", <:OneHotArray{var"#s29", <:Any, <:Any, I}}} where {var"#s29", var"N+1", I})
+     @ OneHotArrays ~/.julia/packages/OneHotArrays/DqU9m/src/linalg.jl:7
 ```
