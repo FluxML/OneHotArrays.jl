@@ -48,10 +48,13 @@ end
   y = onehotbatch(ones(3), 1:2) |> cu;
   @test (repr("text/plain", y); true)
 
-  gA = rand(3, 2) |> cu;
-
-  #NOTE: this would require something that can copute gradient... we don't have that here?
+  #NOTE: this would require something that can compute gradient... we don't have that here?
   #@test gradient(A -> sum(A * y), gA)[1] isa CuArray
+end
+
+@testset "LinearAlgebra" begin
+  y = onehotbatch(ones(3), 1:2) |> cu;
+  gA = rand(3, 2) |> cu;
 
   # some specialized implementations call only mul! and not *, so we must ensure this works
   @test LinearAlgebra.mul!(similar(gA, 3, 3), gA, y) ≈ gA*y
@@ -66,6 +69,14 @@ end
   y = reshape(y, 3, 2)
   gA = rand(2, 3) |> cu
   @test_broken LinearAlgebra.mul!(similar(gA, 2, 2), gA, y) ≈ gA*y
+
+  A = cu([1 3 5; 2 4 6; 3 6 9])
+  b3_dense = cu(Array(OneHotMatrix([1, 1, 2], 4)))
+  b3 = OneHotMatrix(cu([1, 1, 2]), 4)
+
+  d1 = fill(NaN, 3, 4) |> cu
+  @test mul!(d1, A, b3') == A * b3_dense'
+  @test mul!(d1, A, transpose(b3)) == A * transpose(b3_dense)
 end
 
 @testset "onehotbatch(::CuArray, ::UnitRange)" begin
