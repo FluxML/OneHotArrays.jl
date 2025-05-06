@@ -49,6 +49,31 @@ end
   @test_throws BoundsError oa[:, :]
 end
 
+@testset "Writing" begin
+  x = onehotbatch([1,2,3], 0:4)
+  x[1] = 1
+  @test x[:, 1] == [1, 0, 0, 0, 0]
+  x[2, 1] = 1.0
+  @test x[:, 1] == [0, 1, 0, 0, 0]
+  x[2] = 0
+  @test x[:, 1] == [0, 0, 1, 0, 0]  # writing 0 pushes 1 down
+
+  y = onehotbatch([4,0,1], 0:4)
+  @test copyto!(x, y) == y
+  @test x[:, 1] == [0, 0, 0, 0, 1]
+  x .= 1
+  @test x[end, :] == [1, 1, 1]
+  x .= y
+  @test x[:, 3] == [0, 1, 0, 0, 0]
+
+  @test_throws ArgumentError y[5,1] = 0  # can't push 1 off the end
+  @test sum(y) == 3  # has not been corrupted before error
+
+  @test_throws BoundsError x[6,1] = 0
+  @test_throws BoundsError x[16] = 0
+  @test_throws InexactError x[2] = 1.5
+end
+
 @testset "Concatenating" begin
   # vector cat
   @test hcat(ov, ov) == OneHotMatrix(vcat(ov.indices, ov.indices), 10)

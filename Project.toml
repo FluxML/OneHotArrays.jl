@@ -17,7 +17,7 @@ ChainRulesCore = "1.13"
 Compat = "4.2"
 GPUArraysCore = "0.1, 0.2"
 NNlib = "0.8, 0.9"
-Zygote = "0.6.35"
+Zygote = "0.6.77, 0.7.7"
 julia = "1.6"
 
 [extras]

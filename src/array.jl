@@ -88,6 +88,20 @@ function Base.copyto!(dst::Array{T,N}, src::OneHotArray{<:Any,<:Any,N,<:AnyGPUAr
   copyto!(dst, adapt(Array, src))
 end
 
+@inline function Base.setindex!(x::OneHotArray{<:Any, N}, v, i::Integer, I::Vararg{Integer, N}) where N
+  @boundscheck checkbounds(x, i, I...)
+  if Bool(v)
+    @inbounds x.indices[I...] = i
+  elseif x.indices[I...] == i
+    # writing 0, at position of the 1 => move the 1 down if possible
+    i == x.nlabels && throw(ArgumentError("`setindex!` here would leave the `OneHotArray` without a hot one (in this column)"))
+    @inbounds x.indices[I...] = i+1
+  else
+    # writing 0, where it's already 0 => do nothing
+  end
+  x
+end
+
 function Base.showarg(io::IO, x::OneHotArray, toplevel)
   print(io, ndims(x) == 1 ? "OneHotVector(" : ndims(x) == 2 ? "OneHotMatrix(" : "OneHotArray(")
   Base.showarg(io, x.indices, false)
@@ -104,9 +118,9 @@ end
 # copy CuArray versions back before trying to print them:
 for fun in (:show, :print_array)  # print_array is used by 3-arg show
   @eval begin
-    Base.$fun(io::IO, X::OneHotLike{T, N, var"N+1", <:AbstractGPUArray}) where {T, N, var"N+1"} = 
+    Base.$fun(io::IO, X::OneHotLike{T, N, var"N+1", <:AbstractGPUArray}) where {T, N, var"N+1"} =
       Base.$fun(io, adapt(Array, X))
-    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, N, <:Any, <:AbstractGPUArray}}) where {T, N} = 
+    Base.$fun(io::IO, X::LinearAlgebra.AdjOrTrans{Bool, <:OneHotLike{T, N, <:Any, <:AbstractGPUArray}}) where {T, N} =
       Base.$fun(io, adapt(Array, X))
   end
 end
