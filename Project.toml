@@ -10,15 +10,22 @@ GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 
+[weakdeps]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+
+[extensions]
+OneHotArraysCategoricalArraysExt = "CategoricalArrays"
+
 [compat]
 Adapt = "3.0, 4"
 CUDA = "4, 5"
+CategoricalArrays = "0.10.8"
 ChainRulesCore = "1.13"
 Compat = "4.2"
 GPUArraysCore = "0.1, 0.2"
 NNlib = "0.8, 0.9"
 Zygote = "0.6.35"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -28,4 +35,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Test", "CUDA", "JLArrays", "Random", "Zygote"]
+test = ["Test", "CategoricalArrays", "CUDA", "JLArrays", "Random", "Zygote"]
