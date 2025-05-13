@@ -8,7 +8,7 @@ stored as a compact `N == M-1`-dimensional array of indices.
 Typically constructed by [`onehot`](@ref) and [`onehotbatch`](@ref).
 Parameter `I` is the type of the underlying storage, and `T` its eltype.
 """
-struct OneHotArray{T<:Integer, N, var"N+1", I<:Union{T, AbstractArray{T, N}}} <: AbstractArray{Bool, var"N+1"}
+struct OneHotArray{T, N, var"N+1", I<:Union{T, AbstractArray{T, N}}} <: AbstractArray{Bool, var"N+1"}
   indices::I
   nlabels::Int
 end
