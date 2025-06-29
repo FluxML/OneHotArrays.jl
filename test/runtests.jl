@@ -14,6 +14,10 @@ end
   include("linalg.jl")
 end
 
+@testset "Extensions" begin
+  include("ext_categorical.jl")
+end
+
 using Zygote
 import CUDA
 if CUDA.functional()
