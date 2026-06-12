@@ -8,8 +8,7 @@ steps:
           version: "1.10"
       - JuliaCI/julia-test#v1: ~
     agents:
-      queue: "juliagpu"
-      cuda: "*"
+      queue: "cuda"
     timeout_in_minutes: 60
 
   - label: "GPU integration with julia v1"
@@ -20,8 +19,7 @@ steps:
       - JuliaCI/julia-coverage#v1:
           codecov: true
     agents:
-      queue: "juliagpu"
-      cuda: "*"
+      queue: "cuda"
     env:
       JULIA_CUDA_USE_BINARYBUILDER: "true"
     timeout_in_minutes: 60
@@ -32,8 +30,7 @@ steps:
   #         version: "nightly"
   #     - JuliaCI/julia-test#v1: ~
   #   agents:
-  #     queue: "juliagpu"
-  #     cuda: "*"
+  #     queue: "cuda"
   #   timeout_in_minutes: 60
 
 env:
